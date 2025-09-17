@@ -1,0 +1,153 @@
+/* src/components/Footer.css */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+.footer-container {
+    background-color: #0d1a2c;
+    color: #fff;
+    padding: 60px 80px 20px;
+    font-family: 'Arial', sans-serif;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.footer-column {
+    flex: 1;
+}
+
+.brand-column {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.footer-logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #fff;
+    font-size: 2.5rem; /* Perbesar ukuran font logo */
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.footer-logo img {
+    height: 90px; /* Perbesar tinggi logo */
+    margin-right: 10px;
+}
+
+.studio-name {
+    line-height: 1;
+}
+
+.newsletter-text {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin: 0 0 10px 0;
+}
+
+.newsletter-form {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 50px;
+    overflow: hidden;
+    width: 250px;
+    margin-bottom: 20px;
+}
+
+.newsletter-form input {
+    border: none;
+    padding: 12px 20px;
+    flex-grow: 1;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.newsletter-form input:focus {
+    outline: none;
+}
+
+.newsletter-btn {
+    background-color: #ff9100;
+    border: none;
+    color: #fff;
+    font-size: 1.2rem;
+    padding: 12px;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    margin-right: 5px;
+    transition: background-color 0.3s;
+}
+
+.newsletter-btn:hover {
+    background-color: #e68200;
+}
+
+.social-icons a {
+    color: #fff;
+    font-size: 1.5rem;
+    margin-right: 15px;
+    transition: color 0.3s;
+}
+
+.social-icons a:hover {
+    color: #ff9100;
+}
+
+.navigation-column h3 {
+    color: #ff9100;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+}
+
+.navigation-column ul {
+    list-style: none;
+    padding: 0;
+}
+
+.navigation-column li a {
+    color: #fff;
+    text-decoration: none;
+    line-height: 2;
+    transition: color 0.3s;
+}
+
+.navigation-column li a:hover {
+    color: #ff9100;
+}
+
+.policy-column ul {
+    list-style: none;
+    padding: 0;
+}
+
+.policy-column li a {
+    color: #ccc;
+    text-decoration: none;
+    line-height: 2;
+    transition: color 0.3s;
+}
+
+.policy-column li a:hover {
+    color: #ff9100;
+}
+
+.footer-bottom {
+    text-align: center;
+    border-top: 1px solid #333;
+    padding-top: 20px;
+}
+
+.copyright {
+    font-size: 0.8rem;
+    color: #666;
+    margin: 0;
+}
