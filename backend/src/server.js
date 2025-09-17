@@ -1,17 +1,27 @@
 // src/server.js
 const express = require("express");
 const cors = require("cors");
-const path = require('path');
+const path = require("path");
 const connection = require("./db.js");
 
 const app = express();
 
+// allow CORS
 app.use(cors());
-
-app.use('/assets', express.static(path.join(__dirname, '../frontend/src/assets')));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+/**
+ * Static file untuk gambar yang di-upload.
+ * Pastikan foldernya sesuai dengan lokasi upload di routes (post.routes.js).
+ * Di contoh sebelumnya file di-upload ke backend/src/public/images
+ */
+app.use(
+  "/assets/images",
+  express.static(path.join(__dirname, "public", "images"))
+);
+// sehingga file bisa diakses via:
+// http://localhost:8080/assets/images/namafile.jpg
 
 // Endpoint dasar
 app.get("/", (req, res) => {
@@ -20,7 +30,7 @@ app.get("/", (req, res) => {
 
 // Import dan gunakan route
 const servicesRoutes = require("./routes/services.routes.js");
-const portfolioRoutes = require("./routes/portfolio.routes.js");  
+const portfolioRoutes = require("./routes/portfolio.routes.js");
 const postRoutes = require("./routes/post.routes.js");
 const productRoutes = require("./routes/product.routes.js");
 const authRoutes = require("./routes/auth.routes.js");
@@ -33,6 +43,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/packages", packageRoutes);
 
+// Jalankan server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);

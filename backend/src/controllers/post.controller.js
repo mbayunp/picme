@@ -1,121 +1,112 @@
-const connection = require("../db.js");
+// controllers/post.controller.js
+const connection = require('../db.js');
 const fs = require('fs');
 const path = require('path');
 
 exports.findAll = (req, res) => {
-    // Mengambil semua postingan dari database
-    const query = "SELECT * FROM posts ORDER BY created_at DESC";
-    connection.query(query, (err, data) => {
-        if (err) {
-            console.error("Error fetching posts:", err);
-            res.status(500).send({ message: err.message || "Terjadi kesalahan saat mengambil data postingan." });
-        } else {
-            res.send(data);
-        }
-    });
+  const query = "SELECT * FROM posts ORDER BY created_at DESC";
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error("Error fetching posts:", err);
+      return res.status(500).send({ message: err.message || "Error mengambil postingan." });
+    }
+    const postsWithImageUrl = results.map(post => ({
+      ...post,
+      image_url: post.image_url
+        ? `${req.protocol}://${req.get('host')}/assets/images/${post.image_url}`
+        : null,
+    }));
+    res.send(postsWithImageUrl);
+  });
 };
 
 exports.create = (req, res) => {
-    // Membuat postingan baru
-    const { title, content } = req.body;
-    const image_url = req.file ? req.file.filename : null;
+  const { title, content } = req.body;
+  const image = req.file;
+  const image_url = image ? image.filename : null;
 
-    if (!title || !content) {
-        return res.status(400).send({ message: "Judul dan konten tidak boleh kosong." });
+  if (!title || !content) {
+    return res.status(400).send({ message: "Judul dan konten tidak boleh kosong." });
+  }
+
+  const newPost = { title, content, image_url };
+  connection.query("INSERT INTO posts SET ?", newPost, (err, data) => {
+    if (err) {
+      console.error("Error creating post:", err);
+      return res.status(500).send({ message: err.message || "Error membuat postingan." });
+    }
+    res.status(201).send({
+      id: data.insertId,
+      title,
+      content,
+      image_url: image_url ? `${req.protocol}://${req.get('host')}/assets/images/${image_url}` : null,
+    });
+  });
+};
+
+exports.update = (req, res) => {
+  const postId = req.params.id;
+  const { title, content } = req.body;
+  const image = req.file;
+
+  connection.query("SELECT image_url FROM posts WHERE id = ?", [postId], (err, rows) => {
+    if (err) {
+      console.error("Error fetch old image:", err);
+      return res.status(500).send({ message: "Error server." });
+    }
+    const oldImage = rows[0]?.image_url;
+
+    let newImageUrl = oldImage;
+    if (image) {
+      newImageUrl = image.filename;
+      if (oldImage) {
+        const oldPath = path.join(__dirname, '..', 'public', 'images', oldImage);
+        fs.unlink(oldPath, err => {
+          if (err) console.error("Error menghapus file lama:", err);
+        });
+      }
     }
 
-    const newPost = {
-        title: title,
-        content: content,
-        image_url: image_url
-    };
-
-    const query = "INSERT INTO posts SET ?";
-    connection.query(query, newPost, (err, data) => {
-        if (err) {
-            console.error("Error creating post:", err);
-            res.status(500).send({ message: err.message || "Terjadi kesalahan saat membuat postingan." });
-        } else {
-            res.status(201).send({ id: data.insertId, ...newPost, message: "Postingan berhasil dibuat!" });
+    connection.query(
+      "UPDATE posts SET title = ?, content = ?, image_url = ? WHERE id = ?",
+      [title, content, newImageUrl, postId],
+      (err2, result) => {
+        if (err2) {
+          console.error("Error update post:", err2);
+          return res.status(500).send({ message: "Error memperbarui postingan." });
         }
-    });
-};
-
-// Fungsi untuk memperbarui postingan
-exports.update = (req, res) => {
-    const postId = req.params.id;
-    const { title, content } = req.body;
-    const newImage = req.file;
-
-    const getOldImageQuery = "SELECT image_url FROM posts WHERE id = ?";
-    connection.query(getOldImageQuery, postId, (err, results) => {
-        if (err) {
-            return res.status(500).send({ message: "Terjadi kesalahan server." });
+        if (result.affectedRows === 0) {
+          return res.status(404).send({ message: "Postingan tidak ditemukan." });
         }
-        const oldImage = results[0]?.image_url;
-
-        let image_url = oldImage;
-        if (newImage) {
-            image_url = newImage.filename;
-            // Hapus gambar lama jika ada
-            if (oldImage) {
-                const oldImagePath = path.join(__dirname, '../../frontend/src/assets/images/', oldImage);
-                if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath);
-                }
-            }
-        }
-
-        const updateQuery = "UPDATE posts SET title = ?, content = ?, image_url = ? WHERE id = ?";
-        connection.query(updateQuery, [title, content, image_url, postId], (err, result) => {
-            if (err) {
-                console.error("Error updating post:", err);
-                return res.status(500).send({ message: "Terjadi kesalahan saat memperbarui postingan." });
-            }
-            if (result.affectedRows === 0) {
-                return res.status(404).send({ message: "Postingan tidak ditemukan." });
-            }
-            res.send({ message: "Postingan berhasil diperbarui!" });
+        res.send({
+          message: "Postingan berhasil diperbarui!",
+          image_url: newImageUrl ? `${req.protocol}://${req.get('host')}/assets/images/${newImageUrl}` : null,
         });
-    });
+      }
+    );
+  });
 };
 
-// PERBAIKAN: Tambahkan logika penghapusan file
 exports.delete = (req, res) => {
-    const postId = req.params.id;
-
-    // Pertama, ambil nama file gambar dari database
-    const getImageUrlQuery = "SELECT image_url FROM posts WHERE id = ?";
-    connection.query(getImageUrlQuery, postId, (err, results) => {
-        if (err) {
-            console.error("Error fetching image URL:", err);
-            return res.status(500).send({ message: "Terjadi kesalahan saat mengambil URL gambar." });
-        }
-        
-        const imageUrl = results.length > 0 ? results[0].image_url : null;
-        
-        // Hapus postingan dari database
-        const deleteQuery = "DELETE FROM posts WHERE id = ?";
-        connection.query(deleteQuery, postId, (err, result) => {
-            if (err) {
-                console.error("Error deleting post:", err);
-                return res.status(500).send({ message: "Terjadi kesalahan saat menghapus postingan." });
-            } else if (result.affectedRows === 0) {
-                return res.status(404).send({ message: "Postingan tidak ditemukan." });
-            }
-
-            // Hapus file gambar dari server jika ada
-            if (imageUrl) {
-                const filePath = path.join(__dirname, '../../frontend/src/assets/images/', imageUrl);
-                fs.unlink(filePath, (unlinkErr) => {
-                    if (unlinkErr) {
-                        console.error("Gagal menghapus file gambar:", unlinkErr);
-                    }
-                    console.log("File gambar berhasil dihapus.");
-                });
-            }
-
-            res.send({ message: "Postingan berhasil dihapus." });
+  const postId = req.params.id;
+  connection.query("SELECT image_url FROM posts WHERE id = ?", [postId], (err, rows) => {
+    if (err) {
+      console.error("Error fetching image to delete:", err);
+      return res.status(500).send({ message: "Error server." });
+    }
+    const imageUrl = rows[0]?.image_url;
+    connection.query("DELETE FROM posts WHERE id = ?", [postId], (err2, result) => {
+      if (err2) {
+        console.error("Error deleting post:", err2);
+        return res.status(500).send({ message: "Error menghapus postingan." });
+      }
+      if (imageUrl) {
+        const filePath = path.join(__dirname, '..', 'public', 'images', imageUrl);
+        fs.unlink(filePath, errDel => {
+          if (errDel) console.error("Error menghapus file gambar:", errDel);
         });
+      }
+      res.send({ message: "Postingan berhasil dihapus." });
     });
+  });
 };

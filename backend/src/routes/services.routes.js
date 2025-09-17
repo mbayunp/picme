@@ -1,14 +1,15 @@
-// src/routes/services.routes.js
 const express = require("express");
 const router = express.Router();
 const servicesController = require("../controllers/services.controller.js");
 const { verifyToken } = require("../middleware/auth.middleware.js");
 
 router.get("/", verifyToken, servicesController.findAll);
-
 router.get("/slots", servicesController.getAvailableSlots);
 router.post("/", servicesController.create);
-
+router.put("/:id", verifyToken, servicesController.update); 
 router.delete("/:id", verifyToken, servicesController.delete);
+
+// Tambahkan rute baru ini untuk Data Pelanggan
+router.get("/customers", verifyToken, servicesController.findAllCustomers);
 
 module.exports = router;
