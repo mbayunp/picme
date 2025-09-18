@@ -1,14 +1,12 @@
-/** @type {import('tailwindcss').Config} */
+// tailwind.config.js
 module.exports = {
-  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}", // Pastikan path ini mencakup semua file JS, JSX, TS, TSX di folder src.
+    "./src/AnimatedBackgroundParticles.jsx" // Opsional, tapi pastikan path ini benar jika file tidak di-catch oleh glob di atas.
+  ],
   theme: {
-    extend: {
-      colors: {
-        navy: "#0d1a2c",
-        sky: "#00a8c6",
-        amber: "#f9b233",
-      },
-    },
+    extend: {},
   },
   plugins: [],
-};
+}
