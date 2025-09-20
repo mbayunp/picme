@@ -1,3 +1,73 @@
+/* src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Kode untuk membuat animasi heksagonal */
+.hex-shape-1,
+.hex-shape-2,
+.hex-shape-3 {
+  /* Common styles for all hexagonal shapes */
+  width: 250px;
+  height: 250px;
+  background-color: #b3e6ff;
+  -webkit-clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.hex-shape-1 {
+  top: 15%;
+  left: 10%;
+  animation: rotate-hex-1 20s linear infinite;
+}
+
+.hex-shape-2 {
+  width: 350px;
+  height: 350px;
+  top: 60%;
+  left: 30%;
+  animation: rotate-hex-2 25s linear infinite;
+}
+
+.hex-shape-3 {
+  width: 500px;
+  height: 500px;
+  top: 20%;
+  right: 15%;
+  animation: rotate-hex-3 30s linear infinite;
+}
+
+/* Define keyframes for the rotation animation */
+@keyframes rotate-hex-1 {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rotate-hex-2 {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes rotate-hex-3 {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Optionally add a blur filter for a softer effect */
+.hex-shape-1,
+.hex-shape-2,
+.hex-shape-3 {
+  filter: blur(10px);
+}

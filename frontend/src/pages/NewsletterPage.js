@@ -18,7 +18,7 @@ function NewsletterPage() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto my-10 p-5 font-sans">
+    <div className="max-w-4xl mx-auto my-10 p-5 font-sans min-h-screen pt-32">
       <h1 className="text-center mb-10 text-4xl font-bold">Newsletter & Blog</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {posts.length > 0 ? (

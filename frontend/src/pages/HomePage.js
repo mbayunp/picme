@@ -1,3 +1,4 @@
+// src/pages/HomePage.jsx
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -10,8 +11,14 @@ function HomePage() {
 
   return (
     <div className="font-rethink-sans">
-      {/* Hero Section */}
+      {/* Hero Section dengan Animasi Hexagonal */}
       <section className="bg-[#0d1a2c] text-white min-h-screen flex items-center px-12 relative overflow-hidden">
+        {/* Hexagonal Shapes for Background Animation */}
+        <div className="hex-shape-1 absolute z-0 opacity-20"></div>
+        <div className="hex-shape-2 absolute z-0 opacity-15"></div>
+        <div className="hex-shape-3 absolute z-0 opacity-10"></div>
+        
+        {/* Konten utama di atas animasi */}
         <div className="max-w-7xl mx-auto z-10 w-full">
           <h1 className="text-5xl font-bold leading-tight mb-6">
             <span className="block">Taking Some Happiness</span>
@@ -81,7 +88,7 @@ function HomePage() {
           </div>
           <div className="flex items-center justify-center mt-8 md:mt-0">
             <img
-              src="/images/poster1.jpg" // Jalur yang sudah diperbaiki
+              src="/images/poster1.jpg"
               alt="Poster Studio"
               className="w-96 h-96 object-cover mx-auto"
             />
@@ -124,7 +131,7 @@ function HomePage() {
           {showPicMeLogo && (
             <div className="flex justify-center mt-8">
               <img
-                src="/images/logo2.png" // Jalur yang sudah diperbaiki
+                src="/images/logo2.png"
                 alt="PicMe Studio Logo"
                 className="w-48 transition-all duration-300 transform scale-100 opacity-100"
               />
@@ -180,7 +187,7 @@ function HomePage() {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="border rounded-lg overflow-hidden shadow-md">
               <img
-                src="/images/photo1.jpg" // Jalur yang sudah diperbaiki
+                src="/images/photo1.jpg"
                 alt="Photo session"
                 className="w-full h-64 object-cover"
               />
@@ -202,7 +209,7 @@ function HomePage() {
             </div>
             <div className="border rounded-lg overflow-hidden shadow-md">
               <img
-                src="/images/photo2.jpg" // Jalur yang sudah diperbaiki
+                src="/images/photo2.jpg"
                 alt="Photo ideas with soulmate"
                 className="w-full h-64 object-cover"
               />
@@ -226,7 +233,7 @@ function HomePage() {
           <div className="grid md:grid-cols-2 gap-8 mt-12 md:mt-24">
             <div className="order-last md:order-first border rounded-lg overflow-hidden shadow-md">
               <img
-                src="/images/photo3.jpg" // Jalur yang sudah diperbaiki
+                src="/images/photo3.jpg"
                 alt="Another photo session"
                 className="w-full h-64 object-cover"
               />
@@ -248,7 +255,7 @@ function HomePage() {
             </div>
             <div className="border rounded-lg overflow-hidden shadow-md">
               <img
-                src="/images/photo4.jpg" // Jalur yang sudah diperbaiki
+                src="/images/photo4.jpg"
                 alt="Creative photo ideas"
                 className="w-full h-64 object-cover"
               />
