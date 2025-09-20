@@ -1,7 +1,5 @@
-// HomePage.jsx
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import logo2 from "../assets/images/logo2.png";
 
 function HomePage() {
   const [showPicMeLogo, setShowPicMeLogo] = useState(false);
@@ -12,9 +10,7 @@ function HomePage() {
 
   return (
     <div className="font-rethink-sans">
-
       {/* Hero Section */}
-      {/* Menggunakan `min-h-screen` untuk membuat section mengisi tinggi layar */}
       <section className="bg-[#0d1a2c] text-white min-h-screen flex items-center px-12 relative overflow-hidden">
         <div className="max-w-7xl mx-auto z-10 w-full">
           <h1 className="text-5xl font-bold leading-tight mb-6">
@@ -43,7 +39,6 @@ function HomePage() {
       </section>
 
       {/* Discover Studio */}
-      {/* Menggunakan `min-h-screen` untuk membuat section mengisi tinggi layar */}
       <section className="bg-white py-20 px-12 min-h-screen flex items-center">
         <div className="grid grid-cols-1 md:grid-cols-2 max-w-7xl mx-auto w-full">
           <div className="flex flex-col justify-center">
@@ -59,26 +54,42 @@ function HomePage() {
               ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo
               consequat.
             </p>
-            <p className="text-gray-700">
+            <p className="text-gray-700 mb-8">
               Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam
               nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat
               volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation
               ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo
               consequat.
             </p>
+
+            {/* Bagian Baru: Foto Kecil dan Kutipan */}
+            <div className="flex items-center space-x-4 mt-8">
+              <img
+                src="/images/images1.jpg"
+                alt="Happy customer"
+                className="w-16 h-16 rounded-full object-cover"
+              />
+              <div>
+                <p className="text-gray-800 italic text-lg font-medium">
+                  “The best photo studio experience I've ever had!”
+                </p>
+                <p className="text-gray-500 text-sm mt-1">
+                  — John S., Happy Client
+                </p>
+              </div>
+            </div>
           </div>
           <div className="flex items-center justify-center mt-8 md:mt-0">
             <img
-              src="./assets/images/manhole-poster.jpg"
+              src="/images/poster1.jpg" // Jalur yang sudah diperbaiki
               alt="Poster Studio"
-              className="w-full h-full object-cover"
+              className="w-96 h-96 object-cover mx-auto"
             />
           </div>
         </div>
       </section>
 
       {/* Unique Ideas */}
-      {/* Menggunakan `min-h-screen` untuk membuat section mengisi tinggi layar */}
       <section className="bg-black text-white py-20 px-12 relative overflow-hidden min-h-screen flex flex-col justify-center">
         <div className="max-w-7xl mx-auto z-10 relative w-full">
           <div className="absolute top-0 right-0 text-right text-gray-400 text-sm max-w-xs mb-16">
@@ -88,7 +99,7 @@ function HomePage() {
             <div className="md:w-full flex items-center justify-center md:justify-start">
               <div className="w-24 h-16 md:w-48 md:h-24 overflow-hidden rounded-lg mr-4 md:mr-8 flex-shrink-0">
                 <img
-                  src="https://images.unsplash.com/photo-1559628233-9759a9bd9b49?q=80&w=600&auto=format&fit=crop"
+                  src="/images/team.jpg"
                   alt="Team collaboration"
                   className="w-full h-full object-cover"
                 />
@@ -104,7 +115,7 @@ function HomePage() {
             <div className="md:w-1/2 flex justify-center md:justify-end mt-8 md:mt-0">
               <button
                 onClick={handleWhatWeDoClick}
-                className="px-8 py-4 bg-orange-500 text-black rounded-full font-semibold hover:bg-orange-600 transition-colors flex items-center gap-2"
+                className="px-8 py-4 bg-blue-500 text-black rounded-full font-semibold hover:bg-blue-600 transition-colors flex items-center gap-2"
               >
                 WHAT WE DO <span className="ml-2">→</span>
               </button>
@@ -113,14 +124,13 @@ function HomePage() {
           {showPicMeLogo && (
             <div className="flex justify-center mt-8">
               <img
-                src={logo2}
+                src="/images/logo2.png" // Jalur yang sudah diperbaiki
                 alt="PicMe Studio Logo"
                 className="w-48 transition-all duration-300 transform scale-100 opacity-100"
               />
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-16 px-4">
-            {/* Menggunakan `h-full` dan `flex-grow` untuk mengisi tinggi kontainer */}
             <div className="border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-gray-900 bg-opacity-30">
               <h3 className="text-xl font-semibold mb-2">
                 Branding and <br /> Identity Design
@@ -154,11 +164,9 @@ function HomePage() {
       </section>
 
       {/* Customer Voices */}
-      {/* Menggunakan `min-h-screen` untuk membuat section mengisi tinggi layar */}
       <TestimonialSection />
 
       {/* Popular Publication */}
-      {/* Menggunakan `min-h-screen` untuk membuat section mengisi tinggi layar */}
       <section className="py-20 px-12 bg-white min-h-screen flex items-center">
         <div className="max-w-7xl mx-auto w-full">
           <div className="flex justify-between items-center mb-10">
@@ -172,7 +180,7 @@ function HomePage() {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="border rounded-lg overflow-hidden shadow-md">
               <img
-                src="https://images.unsplash.com/photo-1586977001280-50f8c1aaecb7?q=80&w=1200&auto=format&fit=crop"
+                src="/images/photo1.jpg" // Jalur yang sudah diperbaiki
                 alt="Photo session"
                 className="w-full h-64 object-cover"
               />
@@ -194,7 +202,7 @@ function HomePage() {
             </div>
             <div className="border rounded-lg overflow-hidden shadow-md">
               <img
-                src="https://images.unsplash.com/photo-1559628233-9759a9bd9b49?q=80&w=1200&auto=format&fit=crop"
+                src="/images/photo2.jpg" // Jalur yang sudah diperbaiki
                 alt="Photo ideas with soulmate"
                 className="w-full h-64 object-cover"
               />
@@ -218,7 +226,7 @@ function HomePage() {
           <div className="grid md:grid-cols-2 gap-8 mt-12 md:mt-24">
             <div className="order-last md:order-first border rounded-lg overflow-hidden shadow-md">
               <img
-                src="https://images.unsplash.com/photo-1596752009228-5604104d49a6?q=80&w=1200&auto=format&fit=crop"
+                src="/images/photo3.jpg" // Jalur yang sudah diperbaiki
                 alt="Another photo session"
                 className="w-full h-64 object-cover"
               />
@@ -240,7 +248,7 @@ function HomePage() {
             </div>
             <div className="border rounded-lg overflow-hidden shadow-md">
               <img
-                src="https://images.unsplash.com/photo-1579781845610-18e38f657a55?q=80&w=1200&auto=format&fit=fit=crop"
+                src="/images/photo4.jpg" // Jalur yang sudah diperbaiki
                 alt="Creative photo ideas"
                 className="w-full h-64 object-cover"
               />
@@ -352,8 +360,8 @@ function TestimonialSection() {
               key={t.id}
               onClick={() => setIndex(i)}
               className={`w-16 h-16 rounded-full overflow-hidden cursor-pointer transition-all duration-300
-                    ${i === index ? "border-4 border-orange-500 scale-110" : "border-2 border-gray-300 opacity-70 hover:opacity-100"}
-                    ${i % 2 === 0 ? "translate-y-0" : "translate-y-4 md:translate-y-6"}`}
+                  ${i === index ? "border-4 border-blue-500 scale-110" : "border-2 border-gray-300 opacity-70 hover:opacity-100"}
+                  ${i % 2 === 0 ? "translate-y-0" : "translate-y-4 md:translate-y-6"}`}
             >
               <img src={t.avatar} alt={t.name} className="w-full h-full object-cover" />
             </div>
@@ -366,7 +374,7 @@ function TestimonialSection() {
           </button>
         </div>
         <div className="max-w-3xl mx-auto p-8 relative">
-          <div className="text-5xl text-orange-500 mb-4 font-bold absolute left-1/2 -translate-x-1/2 top-4">”</div>
+          <div className="text-5xl text-blue-500 mb-4 font-bold absolute left-1/2 -translate-x-1/2 top-4">”</div>
           <div className="pt-12">
             <h3 className="text-xl font-semibold">{name}</h3>
             <p className="text-gray-500 mb-8">{role}</p>
