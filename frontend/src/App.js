@@ -10,11 +10,12 @@ import SmoothWormEffect from "./components/SmoothWormEffect.js";
 import HomePage from "./pages/HomePage.js";
 import PortfolioPage from "./pages/PortfolioPage.js";
 import ServicesPage from "./pages/ServicesPage.js";
-import ProdukPage from "./pages/ProdukPage.js";
+// import ProdukPage from "./pages/ProdukPage.js"; // Hapus impor ini
 import NewsletterPage from "./pages/NewsletterPage.js";
 import AdminDashboard from "./pages/AdminDashboard.js";
 import AdminLoginPage from "./pages/AdminLoginPage.js";
 import AdminRegisterPage from "./pages/AdminRegisterPage.js";
+import ContactPage from "./pages/ContactPage.js";
 
 function App() {
   return (
@@ -53,12 +54,13 @@ function App() {
               </>
             }
           />
+          {/* Rute untuk halaman Kontak yang baru */}
           <Route
-            path="/produk"
+            path="/contact"
             element={
               <>
                 <Header />
-                <ProdukPage />
+                <ContactPage />
                 <Footer />
               </>
             }
@@ -73,7 +75,6 @@ function App() {
               </>
             }
           />
-
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />

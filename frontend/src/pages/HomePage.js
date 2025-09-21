@@ -2,6 +2,22 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
+// Komponen baru untuk animasi Liquid Blob
+const LiquidBlobAnimation = () => {
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden">
+      <div className="liquid-blob-container">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
+        <div className="blob blob-4"></div>
+        <div className="blob blob-5"></div>
+        <div className="blob blob-6"></div>
+      </div>
+    </div>
+  );
+};
+
 function HomePage() {
   const [showPicMeLogo, setShowPicMeLogo] = useState(false);
 
@@ -11,15 +27,10 @@ function HomePage() {
 
   return (
     <div className="font-rethink-sans">
-      {/* Hero Section dengan Animasi Hexagonal */}
+      {/* Hero Section dengan Animasi Liquid Blob */}
       <section className="bg-[#0d1a2c] text-white min-h-screen flex items-center px-12 relative overflow-hidden">
-        {/* Hexagonal Shapes for Background Animation */}
-        <div className="hex-shape-1 absolute z-0 opacity-20"></div>
-        <div className="hex-shape-2 absolute z-0 opacity-15"></div>
-        <div className="hex-shape-3 absolute z-0 opacity-10"></div>
-        
-        {/* Konten utama di atas animasi */}
-        <div className="max-w-7xl mx-auto z-10 w-full">
+        <LiquidBlobAnimation />
+        <div className="max-w-7xl mx-auto z-10 w-full relative">
           <h1 className="text-5xl font-bold leading-tight mb-6">
             <span className="block">Taking Some Happiness</span>
             <span className="block text-[#b3e6ff]">Smile Today</span>
@@ -180,9 +191,9 @@ function HomePage() {
             <h2 className="text-3xl font-semibold">
               Popular <span className="text-[#0d1a2c]">Publication:</span>
             </h2>
-            <a href="#" className="text-blue-600 hover:underline">
+            <Link to="/newsletter" className="text-blue-600 hover:underline">
               View All →
-            </a>
+            </Link>
           </div>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="border rounded-lg overflow-hidden shadow-md">
@@ -202,9 +213,9 @@ function HomePage() {
                   Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed
                   diam nonummy nibh euismod tincidunt ut laoreet dolore.
                 </p>
-                <a href="#" className="text-blue-600 hover:underline">
+                <Link to="/newsletter" className="text-blue-600 hover:underline">
                   View All →
-                </a>
+                </Link>
               </div>
             </div>
             <div className="border rounded-lg overflow-hidden shadow-md">
@@ -224,9 +235,9 @@ function HomePage() {
                   Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed
                   diam nonummy nibh euismod tincidunt ut laoreet dolore.
                 </p>
-                <a href="#" className="text-blue-600 hover:underline">
+                <Link to="/newsletter" className="text-blue-600 hover:underline">
                   View All →
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -248,15 +259,15 @@ function HomePage() {
                   Tips dan trik untuk menggunakan pencahayaan alami dan buatan
                   agar hasil potret Anda lebih menakjubkan.
                 </p>
-                <a href="#" className="text-blue-600 hover:underline">
+                <Link to="/newsletter" className="text-blue-600 hover:underline">
                   View All →
-                </a>
+                </Link>
               </div>
             </div>
             <div className="border rounded-lg overflow-hidden shadow-md">
               <img
                 src="/images/photo4.jpg"
-                alt="Creative photo ideas"
+                alt="Creative ideas"
                 className="w-full h-64 object-cover"
               />
               <div className="p-6">
@@ -270,9 +281,9 @@ function HomePage() {
                   Cari inspirasi baru untuk konten media sosial Anda dengan
                   ide-ide foto yang unik dan menarik.
                 </p>
-                <a href="#" className="text-blue-600 hover:underline">
+                <Link to="/newsletter" className="text-blue-600 hover:underline">
                   View All →
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -344,7 +355,7 @@ function TestimonialSection() {
     return null;
   }
 
-  const { name, role, text, avatar } = currentTestimonial;
+  const { name, role, text } = currentTestimonial;
 
   return (
     <section className="py-20 px-12 bg-gray-50 text-center relative min-h-screen flex items-center">

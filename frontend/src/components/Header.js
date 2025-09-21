@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import logo from "../assets/images/logo.png";
+import logo3 from "../assets/images/logo3.png"; // ✅ Import logo baru
 
 function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,7 +14,7 @@ function Header() {
     "/portfolio": "PORTFOLIO",
     "/services": "SERVICES",
     "/newsletter": "NEWSLETTER",
-    "/produk": "OTHER",
+    "/contact": "CONTACT",
   };
 
   const pageName = pageTitles[location.pathname] || "PAGE";
@@ -38,11 +39,12 @@ function Header() {
       {/* HEADER */}
       {!scrolled ? (
         // --- Header awal sebelum scroll ---
-        <header className="fixed top-0 left-0 w-full bg-white shadow z-50 flex justify-between items-center px-10 py-4">
+        <header className="fixed top-0 left-0 w-full bg-white shadow z-50 flex justify-between items-center px-6 md:px-10 py-4">
           <Link to="/">
             <img src={logo} alt="Pictme logo" className="h-16 w-auto" />
           </Link>
-          <nav className="flex gap-6 font-semibold text-gray-800">
+          {/* Navigasi Desktop */}
+          <nav className="hidden md:flex gap-6 font-semibold text-gray-800">
             <Link to="/" className="hover:text-blue-500 transition-colors">
               Homepage
             </Link>
@@ -64,10 +66,30 @@ function Header() {
             >
               Newsletter
             </Link>
-            <Link to="/produk" className="hover:text-blue-500 transition-colors">
-              Other
+            <Link to="/contact" className="hover:text-blue-500 transition-colors">
+              Contact
             </Link>
           </nav>
+          {/* Tombol Hamburger Mobile */}
+          <button
+            aria-label="Open menu"
+            onClick={() => setIsOpen(true)}
+            className="md:hidden p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300"
+          >
+            <svg
+              className="w-8 h-8 text-teal-500"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M4 6h16M4 12h16M4 18h16"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
         </header>
       ) : (
         // --- Header setelah scroll ---
@@ -75,7 +97,8 @@ function Header() {
           {/* Logo kiri atas */}
           <div className="fixed top-6 left-12 z-50">
             <Link to="/">
-              <img src={logo} alt="Pictme logo" className="h-14 w-auto" />
+              {/* ✅ Ganti logo & perbesar */}
+              <img src={logo3} alt="Pictme logo scrolled" className="h-20 w-auto" />
             </Link>
           </div>
 
@@ -135,8 +158,8 @@ function Header() {
                 <Link to="/newsletter" onClick={() => setIsOpen(false)}>
                   Newsletter
                 </Link>
-                <Link to="/produk" onClick={() => setIsOpen(false)}>
-                  Other
+                <Link to="/contact" onClick={() => setIsOpen(false)}>
+                  Contact
                 </Link>
               </nav>
               <div className="mt-auto text-sm text-gray-500">

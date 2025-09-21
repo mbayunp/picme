@@ -1,9 +1,9 @@
-// NewsletterPage.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function NewsletterPage() {
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -12,31 +12,49 @@ function NewsletterPage() {
         setPosts(response.data);
       } catch (error) {
         console.error('Error fetching posts:', error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchPosts();
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto my-10 p-5 font-sans min-h-screen pt-32">
-      <h1 className="text-center mb-10 text-4xl font-bold">Newsletter & Blog</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {posts.length > 0 ? (
+    <div className="font-sans text-gray-900 bg-white min-h-screen pt-32">
+      {/* Header Utama, mengadopsi gaya dari PortfolioPage */}
+      <div className="max-w-screen-xl mx-auto px-5 mb-16">
+        <h1 className="text-6xl md:text-7xl font-light leading-none">
+          <span className="font-bold">Our latest</span> Stories & News
+        </h1>
+        <div className="mt-8 flex items-center space-x-2 text-sm text-gray-500 uppercase tracking-widest">
+          <span>Read Our Blog</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </div>
+      </div>
+      
+      {/* Grid Postingan dengan konsep Masonry, seperti PortfolioPage */}
+      <div className="max-w-screen-xl mx-auto px-5 columns-1 sm:columns-2 lg:columns-3 gap-8">
+        {loading ? (
+          <div className="text-center text-gray-500">Memuat postingan...</div>
+        ) : posts.length > 0 ? (
           posts.map(post => (
-            <div key={post.id} className="flex flex-col bg-white rounded-lg shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105">
+            <div 
+              key={post.id} 
+              className="mb-8 p-3 transform transition duration-300 hover:-translate-y-1 hover:shadow-2xl bg-white rounded-lg break-inside-avoid-column"
+            >
               {post.image_url && (
                 <img
                   src={`http://localhost:8080/assets/images/${post.image_url}`}
                   alt={post.title}
-                  className="w-full h-48 object-cover"
+                  className="w-full object-cover rounded-md"
                 />
               )}
-              <div className="p-5 flex-grow flex flex-col justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
-                  <p className="text-gray-700 leading-relaxed text-sm mb-4">{post.content}</p>
-                </div>
-                <span className="block mt-4 text-gray-500 text-xs">
+              <div className="mt-4">
+                <div className="text-xs text-gray-500 uppercase tracking-wider">{post.title}</div>
+                <h3 className="mt-2 text-xl font-medium">{post.content}</h3>
+                <span className="block mt-2 text-gray-500 text-xs">
                   {new Date(post.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
               </div>
