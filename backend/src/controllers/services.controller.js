@@ -149,14 +149,12 @@ exports.findAll = (req, res) => {
     `;
     let params = [];
 
+    // Gunakan hanya studio_name untuk menghindari kebingungan
     if (studio_name) {
         query += " WHERE s.studio_name = ?";
         params.push(studio_name);
-    } else if (studioId) {
-        query += " WHERE s.studio_name = ?";
-        params.push(`Studio ${studioId}`);
     }
-
+    
     query += " ORDER BY s.tanggal DESC, s.waktu_mulai DESC";
 
     connection.query(query, params, (err, results) => {
