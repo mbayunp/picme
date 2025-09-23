@@ -1,4 +1,3 @@
-// src/server.js
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -13,12 +12,11 @@ app.use(express.urlencoded({ extended: true }));
 
 /**
  * Static file untuk gambar yang di-upload.
- * Pastikan foldernya sesuai dengan lokasi upload di routes (post.routes.js).
- * Di contoh sebelumnya file di-upload ke backend/src/public/images
+ * Path ini harus sesuai dengan lokasi file disimpan.
  */
 app.use(
   "/assets/images",
-  express.static(path.join(__dirname, "public", "images"))
+  express.static(path.join(__dirname, '..', 'public', 'images'))
 );
 // sehingga file bisa diakses via:
 // http://localhost:8080/assets/images/namafile.jpg

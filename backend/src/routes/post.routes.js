@@ -1,4 +1,3 @@
-// routes/post.routes.js
 const express = require('express');
 const router = express.Router();
 const postController = require('../controllers/post.controller.js');
@@ -7,8 +6,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Pastikan folder public/images sudah ada
-const uploadDir = path.join(__dirname, '..', 'public', 'images');
+// Tentukan folder upload yang benar, yaitu di luar folder 'src'
+const uploadDir = path.join(__dirname, '..', '..', 'public', 'assets', 'images');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

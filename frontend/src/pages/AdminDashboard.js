@@ -36,7 +36,7 @@ const AdminDashboard = () => {
         tanggal: '',
         waktu_mulai: '',
         waktu_selesai: '',
-        package_id: null,
+        package_id: '',
         studio_name: '',
         jumlah_orang: 1
     });
@@ -132,6 +132,7 @@ const AdminDashboard = () => {
                 fetchPosts();
             } else if (activeTab === 'bookings') {
                 fetchBookings();
+                fetchPackages(); // Tambahkan fetchPackages di sini
             } else if (activeTab === 'bookings-data') {
                 fetchAllBookings();
                 fetchPackages();
@@ -231,14 +232,14 @@ const AdminDashboard = () => {
         setIsEditing(true);
         setCurrentPostId(post.id);
         setNewPost({ title: post.title, content: post.content });
-        setPreviewUrl(`http://localhost:8080/assets/images/${post.image_url}`);
+        setPreviewUrl(post.image_url); // Gunakan URL dari server langsung
     };
 
     const handleEditPackageClick = (pkg) => {
         setIsEditing(true);
         setCurrentPackageId(pkg.id);
         setNewPackage({ nama_paket: pkg.nama_paket, harga: pkg.harga, deskripsi_paket: pkg.deskripsi_paket });
-        setPreviewUrl(`http://localhost:8080/assets/images/${pkg.image_url}`);
+        setPreviewUrl(pkg.image_url); // Gunakan URL dari server langsung
     };
 
     const handleEditBookingClick = async (booking) => {
@@ -353,6 +354,13 @@ const AdminDashboard = () => {
 
     const handleUpdateBooking = async (e) => {
         e.preventDefault();
+        if (!bookingForm.nama || !bookingForm.tanggal || !bookingForm.waktu_mulai || !bookingForm.waktu_selesai || !bookingForm.studio_name) {
+            setModalTitle('Gagal');
+            setModalMessage('Nama, tanggal, waktu, dan studio harus diisi.');
+            setShowModal(true);
+            return;
+        }
+
         try {
             const token = localStorage.getItem('admin-token');
             const config = { headers: { 'x-access-token': token } };
@@ -421,7 +429,26 @@ const AdminDashboard = () => {
         setImageFile(null);
         setPreviewUrl('');
         setIsEditingBooking(false);
+        setCurrentBooking(null);
+        setBookingForm({
+            nama: '',
+            email: '',
+            nomor_whatsapp: '',
+            catatan: '',
+            tanggal: '',
+            waktu_mulai: '',
+            waktu_selesai: '',
+            package_id: '',
+            studio_name: '',
+            jumlah_orang: 1
+        });
         setIsEditingCustomer(false);
+        setCurrentCustomer(null);
+        setCustomerForm({
+            nama: '',
+            email: '',
+            nomor_whatsapp: '',
+        });
     };
 
     const handleDeletePost = async (postId) => {
@@ -494,13 +521,33 @@ const AdminDashboard = () => {
         setShowModal(true);
     };
 
+    // Pindahkan fungsi-fungsi pembantu ke atas untuk menghindari kesalahan inisialisasi
+    const getPackageName = (packageId) => {
+        const pkg = packages.find(p => p.id === packageId);
+        return pkg ? pkg.nama_paket : 'Tanpa Paket';
+    };
+
+    const formatShortDate = (dateString) => {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        const offset = date.getTimezoneOffset();
+        const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+        return localDate.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const formatLastVisitDate = (dateString) => {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    };
+
     const events = bookings.map(booking => {
         const startDateTime = moment(`${booking.tanggal} ${booking.waktu_mulai}`, 'YYYY-MM-DD HH:mm').toDate();
         const endDateTime = moment(`${booking.tanggal} ${booking.waktu_selesai}`, 'YYYY-MM-DD HH:mm').toDate();
 
         return {
             id: booking.id,
-            title: `${booking.nama} - ${booking.package_name}`,
+            title: `${booking.nama} - ${getPackageName(booking.package_id)}`,
             start: startDateTime,
             end: endDateTime,
             allDay: false
@@ -554,25 +601,6 @@ const AdminDashboard = () => {
 
         return sortDirection === 'asc' ? comparison : -comparison;
     });
-
-    const formatShortDate = (dateString) => {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        const offset = date.getTimezoneOffset();
-        const localDate = new Date(date.getTime() - (offset * 60 * 1000));
-        return localDate.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
-
-    const getPackageName = (packageId) => {
-        const pkg = packages.find(p => p.id === packageId);
-        return pkg ? pkg.nama_paket : 'Tanpa Paket';
-    };
-
-    const formatLastVisitDate = (dateString) => {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
-    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -736,6 +764,39 @@ const AdminDashboard = () => {
                                 ))}
                             </select>
                         </div>
+                        {/* Tambahkan formulir edit pemesanan di sini */}
+                        {isEditingBooking && (
+                            <div className="mt-4 bg-white p-4 rounded-lg shadow-md">
+                                <h4 className="text-lg font-bold mb-2">Edit Pemesanan</h4>
+                                <form onSubmit={handleUpdateBooking} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <input type="text" name="nama" value={bookingForm.nama} onChange={handleBookingFormChange} className="p-2 border rounded" placeholder="Nama" required />
+                                    <input type="email" name="email" value={bookingForm.email} onChange={handleBookingFormChange} className="p-2 border rounded" placeholder="Email" />
+                                    <input type="text" name="nomor_whatsapp" value={bookingForm.nomor_whatsapp} onChange={handleBookingFormChange} className="p-2 border rounded" placeholder="Nomor WhatsApp" />
+                                    <select name="package_id" value={bookingForm.package_id} onChange={handleBookingFormChange} className="p-2 border rounded">
+                                        <option value="">Pilih Paket (opsional)</option>
+                                        {packages.map(p => (
+                                            <option key={p.id} value={p.id}>{p.nama_paket} - Rp{p.harga}</option>
+                                        ))}
+                                    </select>
+                                    <input type="date" name="tanggal" value={bookingForm.tanggal} onChange={handleBookingFormChange} className="p-2 border rounded" required />
+                                    <input type="time" name="waktu_mulai" value={bookingForm.waktu_mulai} onChange={handleBookingFormChange} className="p-2 border rounded" required />
+                                    <input type="time" name="waktu_selesai" value={bookingForm.waktu_selesai} onChange={handleBookingFormChange} className="p-2 border rounded" required />
+                                    <select name="studio_name" value={bookingForm.studio_name} onChange={handleBookingFormChange} className="p-2 border rounded" required>
+                                        <option value="">Pilih Studio</option>
+                                        {studios.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                                    </select>
+                                    <input type="number" name="jumlah_orang" value={bookingForm.jumlah_orang} onChange={handleBookingFormChange} className="p-2 border rounded" placeholder="Jumlah Orang" />
+                                    <textarea name="catatan" value={bookingForm.catatan} onChange={handleBookingFormChange} className="col-span-1 md:col-span-2 p-2 border rounded" placeholder="Catatan (opsional)" />
+                                    <div className="col-span-1 md:col-span-2 flex gap-2">
+                                        <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">Simpan</button>
+                                        <button type="button" onClick={handleCancelEdit} className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500">Batal</button>
+                                        {currentBooking && (
+                                            <button type="button" onClick={() => { handleDeleteBooking(currentBooking.id); setIsEditingBooking(false); }} className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">Hapus</button>
+                                        )}
+                                    </div>
+                                </form>
+                            </div>
+                        )}
                         <div className="bg-white p-5 rounded-lg shadow-sm">
                             <div className="calendar-container" style={{ height: '700px' }}>
                                 <Calendar
@@ -750,7 +811,10 @@ const AdminDashboard = () => {
                                     max={moment('18:00', 'HH:mm').toDate()}
                                     style={{ height: 600 }}
                                     onSelectEvent={(event) => {
-                                        handleDeleteBooking(event.id);
+                                        const selectedBooking = bookings.find(b => b.id === event.id);
+                                        if (selectedBooking) {
+                                            handleEditBookingClick(selectedBooking);
+                                        }
                                     }}
                                 />
                             </div>
@@ -761,38 +825,7 @@ const AdminDashboard = () => {
                 return (
                     <div className="p-5 bg-gray-100 rounded-lg flex-grow flex flex-col">
                         <h3 className="text-xl font-bold mb-4">Detail Pemesanan</h3>
-                        {isEditingBooking && (
-                            <div className="mt-4 bg-white p-4 rounded-lg shadow-md">
-                                <h4 className="text-lg font-bold mb-2">Edit Pemesanan</h4>
-                                <form onSubmit={handleUpdateBooking} className="grid grid-cols-2 gap-4">
-                                    <input type="text" name="nama" value={bookingForm.nama} onChange={handleBookingFormChange} className="p-2 border rounded" placeholder="Nama" />
-                                    <input type="email" name="email" value={bookingForm.email} onChange={handleBookingFormChange} className="p-2 border rounded" placeholder="Email" />
-                                    <input type="text" name="nomor_whatsapp" value={bookingForm.nomor_whatsapp} onChange={handleBookingFormChange} className="p-2 border rounded" placeholder="Nomor WhatsApp" />
-                                    <select name="package_id" value={bookingForm.package_id || ''} onChange={handleBookingFormChange} className="p-2 border rounded">
-                                        <option value="">Pilih Paket (opsional)</option>
-                                        {packages.map(p => (
-                                            <option key={p.id} value={p.id}>{p.nama_paket} - Rp{p.harga}</option>
-                                        ))}
-                                    </select>
-                                    <input type="date" name="tanggal" value={bookingForm.tanggal} onChange={handleBookingFormChange} className="p-2 border rounded" />
-                                    <input type="time" name="waktu_mulai" value={bookingForm.waktu_mulai} onChange={handleBookingFormChange} className="p-2 border rounded" />
-                                    <input type="time" name="waktu_selesai" value={bookingForm.waktu_selesai} onChange={handleBookingFormChange} className="p-2 border rounded" />
-                                    <select name="studio_name" value={bookingForm.studio_name} onChange={handleBookingFormChange} className="p-2 border rounded">
-                                        <option value="">Pilih Studio</option>
-                                        {studios.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                                    </select>
-                                    <input type="number" name="jumlah_orang" value={bookingForm.jumlah_orang} onChange={handleBookingFormChange} className="p-2 border rounded" placeholder="Jumlah Orang" />
-                                    <textarea name="catatan" value={bookingForm.catatan} onChange={handleBookingFormChange} className="col-span-2 p-2 border rounded" placeholder="Catatan (opsional)" />
-                                    <div className="col-span-2 flex gap-2">
-                                        <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">Simpan</button>
-                                        <button type="button" onClick={handleCancelEdit} className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500">Batal</button>
-                                        {currentBooking && (
-                                            <button type="button" onClick={() => { handleDeleteBooking(currentBooking.id); setIsEditingBooking(false); }} className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">Hapus</button>
-                                        )}
-                                    </div>
-                                </form>
-                            </div>
-                        )}
+                        {/* Hapus formulir edit dari sini */}
                         <div className="flex-grow overflow-y-auto bg-white rounded-lg shadow-sm">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50 sticky top-0">
@@ -951,7 +984,7 @@ const AdminDashboard = () => {
                     <button onClick={() => setActiveTab('customers')} className={`block w-full text-left py-4 px-6 mb-2 rounded-lg transition duration-300 ${activeTab === 'customers' ? 'bg-gray-700 text-white' : 'hover:bg-gray-800'}`}>
                         Data Pelanggan
                     </button>
-                    <button onClick={() => {
+                        <button onClick={() => {
                         localStorage.removeItem('admin-token');
                         navigate('/admin/login');
                     }} className="block w-full text-left py-4 px-6 rounded-lg transition duration-300 hover:bg-gray-800">

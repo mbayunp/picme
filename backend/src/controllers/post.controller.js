@@ -1,7 +1,10 @@
-// controllers/post.controller.js
 const connection = require('../db.js');
 const fs = require('fs');
 const path = require('path');
+
+// Tentukan base path untuk folder 'public' secara statis.
+// Ini akan menghindari masalah jika path 'src' berubah.
+const publicPath = path.join(__dirname, '..', '..', 'public', 'assets', 'images');
 
 exports.findAll = (req, res) => {
   const query = "SELECT * FROM posts ORDER BY created_at DESC";
@@ -60,7 +63,7 @@ exports.update = (req, res) => {
     if (image) {
       newImageUrl = image.filename;
       if (oldImage) {
-        const oldPath = path.join(__dirname, '..', 'public', 'images', oldImage);
+        const oldPath = path.join(publicPath, oldImage);
         fs.unlink(oldPath, err => {
           if (err) console.error("Error menghapus file lama:", err);
         });
@@ -79,7 +82,7 @@ exports.update = (req, res) => {
           return res.status(404).send({ message: "Postingan tidak ditemukan." });
         }
         res.send({
-          message: "Postingan berhasil diperbarui!",
+          message: "Postingan berhasil diperbarui.",
           image_url: newImageUrl ? `${req.protocol}://${req.get('host')}/assets/images/${newImageUrl}` : null,
         });
       }
@@ -101,7 +104,7 @@ exports.delete = (req, res) => {
         return res.status(500).send({ message: "Error menghapus postingan." });
       }
       if (imageUrl) {
-        const filePath = path.join(__dirname, '..', 'public', 'images', imageUrl);
+        const filePath = path.join(publicPath, imageUrl);
         fs.unlink(filePath, errDel => {
           if (errDel) console.error("Error menghapus file gambar:", errDel);
         });
