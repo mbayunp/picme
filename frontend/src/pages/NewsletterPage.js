@@ -20,7 +20,7 @@ function NewsletterPage() {
   }, []);
 
   return (
-    <div className="font-sans text-gray-900 bg-white min-h-screen pt-32">
+    <div className="font-sans text-gray-900 bg-white min-h-screen pt-24">
       {/* Header Utama, mengadopsi gaya dari PortfolioPage */}
       <div className="max-w-screen-xl mx-auto px-5 mb-16">
         <h1 className="text-6xl md:text-7xl font-light leading-none">
@@ -48,15 +48,21 @@ function NewsletterPage() {
                 <img
                   src={`http://localhost:8080/assets/images/${post.image_url}`}
                   alt={post.title}
-                  className="w-full object-cover rounded-md"
+                  className="w-full h-auto object-cover rounded-md"
                 />
               )}
               <div className="mt-4">
-                <div className="text-xs text-gray-500 uppercase tracking-wider">{post.title}</div>
-                <h3 className="mt-2 text-xl font-medium">{post.content}</h3>
+                <h3 className="mt-2 text-xl font-medium">{post.title}</h3>
+                <p className="text-sm text-gray-700 mt-2">
+                  {/* Tampilkan sebagian konten untuk preview */}
+                  {post.content.length > 150 ? post.content.substring(0, 150) + '...' : post.content}
+                </p>
                 <span className="block mt-2 text-gray-500 text-xs">
                   {new Date(post.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
+                <a href={`/blog/${post.id}`} className="mt-4 inline-block text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200">
+                    Baca Selengkapnya
+                </a>
               </div>
             </div>
           ))

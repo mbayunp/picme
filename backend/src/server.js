@@ -1,3 +1,4 @@
+// src/server.js
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -10,20 +11,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/**
- * Static file untuk gambar yang di-upload.
- * Path ini harus sesuai dengan lokasi file disimpan.
- */
-app.use(
-  "/assets/images",
-  express.static(path.join(__dirname, '..', 'public', 'images'))
-);
-// sehingga file bisa diakses via:
-// http://localhost:8080/assets/images/namafile.jpg
+// Middleware untuk melayani file statis dari folder public di root proyek
+// Ini adalah perbaikan utamanya
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Endpoint dasar
 app.get("/", (req, res) => {
-  res.json({ message: "Welcome to the Photo Studio API." });
+    res.json({ message: "Welcome to the Photo Studio API." });
 });
 
 // Import dan gunakan route
@@ -44,5 +38,5 @@ app.use("/api/packages", packageRoutes);
 // Jalankan server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
+    console.log(`Server is running on port ${PORT}.`);
 });

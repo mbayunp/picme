@@ -7,12 +7,12 @@ const multer = require("multer");
 
 // Konfigurasi Multer untuk mengunggah file
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'public/assets/images'); // Folder tujuan untuk menyimpan gambar
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname); // Nama file unik: timestamp + nama asli
-  }
+    destination: function (req, file, cb) {
+        cb(null, 'public/assets/images'); // Folder tujuan untuk menyimpan gambar
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + '-' + file.originalname); // Nama file unik: timestamp + nama asli
+    }
 });
 const upload = multer({ storage: storage });
 

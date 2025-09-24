@@ -5,13 +5,14 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Header from "./components/Header.js";
 import Footer from "./components/Footer.js";
 import SmoothWormEffect from "./components/SmoothWormEffect.js";
+import ScrollToTop from "./components/ScrollToTop.js";
 
 // Pages
 import HomePage from "./pages/HomePage.js";
 import PortfolioPage from "./pages/PortfolioPage.js";
 import ServicesPage from "./pages/ServicesPage.js";
-// import ProdukPage from "./pages/ProdukPage.js"; // Hapus impor ini
 import NewsletterPage from "./pages/NewsletterPage.js";
+import PostDetailPage from "./pages/PostDetailPage.js";
 import AdminDashboard from "./pages/AdminDashboard.js";
 import AdminLoginPage from "./pages/AdminLoginPage.js";
 import AdminRegisterPage from "./pages/AdminRegisterPage.js";
@@ -20,6 +21,7 @@ import ContactPage from "./pages/ContactPage.js";
 function App() {
   return (
     <Router>
+      <ScrollToTop /> {/* Tempatkan di sini */}
       <SmoothWormEffect />
       <div className="min-h-screen flex flex-col font-sans bg-gray-50">
         <Routes>
@@ -54,7 +56,6 @@ function App() {
               </>
             }
           />
-          {/* Rute untuk halaman Kontak yang baru */}
           <Route
             path="/contact"
             element={
@@ -71,6 +72,17 @@ function App() {
               <>
                 <Header />
                 <NewsletterPage />
+                <Footer />
+              </>
+            }
+          />
+          {/* Rute untuk halaman detail postingan */}
+          <Route
+            path="/blog/:id"
+            element={
+              <>
+                <Header />
+                <PostDetailPage />
                 <Footer />
               </>
             }
