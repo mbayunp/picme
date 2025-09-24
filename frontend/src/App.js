@@ -1,3 +1,4 @@
+// src/App.js
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -17,11 +18,12 @@ import AdminDashboard from "./pages/AdminDashboard.js";
 import AdminLoginPage from "./pages/AdminLoginPage.js";
 import AdminRegisterPage from "./pages/AdminRegisterPage.js";
 import ContactPage from "./pages/ContactPage.js";
+import NotFoundPage from "./pages/NotFoundPage.js"; // Import komponen baru
 
 function App() {
   return (
     <Router>
-      <ScrollToTop /> {/* Tempatkan di sini */}
+      <ScrollToTop />
       <SmoothWormEffect />
       <div className="min-h-screen flex flex-col font-sans bg-gray-50">
         <Routes>
@@ -76,7 +78,6 @@ function App() {
               </>
             }
           />
-          {/* Rute untuk halaman detail postingan */}
           <Route
             path="/blog/:id"
             element={
@@ -91,6 +92,9 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/register" element={<AdminRegisterPage />} />
+
+          {/* Rute 404 (Not Found) - harus diletakkan di paling akhir */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
     </Router>

@@ -12,7 +12,6 @@ function PostDetailPage() {
     const fetchPost = async () => {
       try {
         setLoading(true);
-        // Memastikan ID dari URL adalah valid
         if (!id) {
           setError('ID postingan tidak valid.');
           setLoading(false);
@@ -24,7 +23,6 @@ function PostDetailPage() {
         setError(null);
       } catch (err) {
         console.error('Error fetching post:', err);
-        // Tangani error jika post tidak ditemukan
         if (err.response && err.response.status === 404) {
           setError('Postingan tidak ditemukan.');
         } else {
@@ -36,7 +34,7 @@ function PostDetailPage() {
       }
     };
     fetchPost();
-  }, [id]); // Pastikan efek berjalan kembali setiap kali ID berubah
+  }, [id]);
 
   if (loading) {
     return (
@@ -63,15 +61,15 @@ function PostDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white pt-24">
-      <div className="max-w-screen-xl mx-auto px-5 py-8">
+    <div className="min-h-screen bg-white pt-24 pb-20">
+      <div className="max-w-4xl mx-auto px-5 py-8">
         <button
           onClick={() => window.history.back()}
           className="mb-6 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
         >
           ← Kembali
         </button>
-        <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-4">
+        <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
           {post.title}
         </h1>
         <div className="text-sm text-gray-500 mb-8">
@@ -83,11 +81,11 @@ function PostDetailPage() {
           <img
             src={`http://localhost:8080/assets/images/${post.image_url}`}
             alt={post.title}
-            className="w-full h-auto object-cover rounded-lg shadow-lg mb-8"
+            className="w-full h-auto object-cover rounded-lg shadow-lg mb-8 max-h-[500px]"
           />
         )}
         
-        <div className="prose max-w-none text-lg leading-relaxed text-gray-800">
+        <div className="text-lg leading-relaxed text-gray-800">
           <p>{post.content}</p>
         </div>
       </div>

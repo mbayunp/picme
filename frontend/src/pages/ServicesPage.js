@@ -134,6 +134,8 @@ function ServicesPage() {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState("");
+  const [modalCurrentPackage, setModalCurrentPackage] = useState(null);
+  const [selectedModalPackage, setSelectedModalPackage] = useState(null);
 
   const studios = [
     { name: "Picme Photo Studio 1", address: "cluster pramuka Blok C.4," },
@@ -158,24 +160,30 @@ function ServicesPage() {
     return weekDays;
   };
 
+  const fetchPackages = async (studioName) => {
+    setLoadingPackages(true);
+    try {
+      const response = await axios.get(`http://localhost:8080/api/packages?studio_name=${encodeURIComponent(studioName)}`);
+      const formattedPackages = response.data.map((pkg) => ({
+        ...pkg,
+        id: parseInt(pkg.id, 10),
+      }));
+      setPackages(formattedPackages);
+    } catch (error) {
+      console.error("Error fetching packages:", error);
+      setPackages([]);
+    } finally {
+      setLoadingPackages(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchPackages = async () => {
-      setLoadingPackages(true);
-      try {
-        const response = await axios.get("http://localhost:8080/api/packages");
-        const formattedPackages = response.data.map((pkg) => ({
-          ...pkg,
-          id: parseInt(pkg.id, 10),
-        }));
-        setPackages(formattedPackages);
-      } catch (error) {
-        console.error("Error fetching packages:", error);
-      } finally {
-        setLoadingPackages(false);
-      }
-    };
-    fetchPackages();
-  }, []);
+    if (selectedStudio) {
+      fetchPackages(selectedStudio.name);
+    } else {
+      setPackages([]);
+    }
+  }, [selectedStudio]);
 
   const normalizeSlots = (arr) => {
     if (!Array.isArray(arr)) return [];
@@ -192,7 +200,6 @@ function ServicesPage() {
     if (selectedDate && selectedStudio) {
       fetchAvailableSlots(selectedDate, selectedStudio.name);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, selectedStudio]);
 
   const fetchAvailableSlots = async (date, studio) => {
@@ -221,19 +228,25 @@ function ServicesPage() {
     setFormData({ ...formData, waktu_mulai: time, waktu_selesai: "" });
   };
 
-  const handlePackageClick = (pkg) => {
-    setSelectedPackage(pkg);
-    setQuantity(1);
-    setShowModal(true);
+  const handleOpenDetailModal = (categoryName) => {
+    const relatedPackages = packages.filter(pkg => pkg.nama_paket.startsWith(categoryName));
+    if (relatedPackages.length > 0) {
+      setModalCurrentPackage(relatedPackages);
+      setSelectedModalPackage(relatedPackages[0]);
+      setShowModal(true);
+    }
   };
 
   const handleAddToCart = () => {
-    if (!selectedPackage) return;
+    if (!selectedModalPackage) return;
 
-    const newItem = { ...selectedPackage, quantity };
+    // Perbarui selectedPackage agar bisa digunakan di step 3
+    setSelectedPackage(selectedModalPackage);
+
+    const newItem = { ...selectedModalPackage, quantity };
     setCart([...cart, newItem]);
 
-    const newPackageId = parseInt(selectedPackage.id, 10);
+    const newPackageId = parseInt(selectedModalPackage.id, 10);
     setFormData({
       ...formData,
       package_id: isNaN(newPackageId) ? null : newPackageId,
@@ -241,6 +254,12 @@ function ServicesPage() {
     });
 
     setShowModal(false);
+    setModalCurrentPackage(null);
+    setSelectedModalPackage(null);
+
+    // Pindah ke step 2 setelah paket ditambahkan ke keranjang
+    setStep(2);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async (e) => {
@@ -310,10 +329,10 @@ function ServicesPage() {
   };
 
   const handleContinueToPackages = () => {
-      if (selectedStudio) {
-          setStep(1);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-      }
+    if (selectedStudio) {
+      setStep(1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handlePrevWeek = () => {
@@ -328,8 +347,17 @@ function ServicesPage() {
     setWeekStartDate(newDate);
   };
 
+  const groupedPackages = packages.reduce((acc, pkg) => {
+    const categoryName = pkg.nama_paket.split(' - ')[0];
+    if (!acc[categoryName]) {
+      acc[categoryName] = [];
+    }
+    acc[categoryName].push(pkg);
+    return acc;
+  }, {});
+
   return (
-    <div className="min-h-screen bg-gray-50 pt-24 px-6">
+    <div className="min-h-screen bg-gray-50 pt-24 px-6 pb-20">
       {message && (
         <div
           className={`px-4 py-3 rounded relative mb-4 border ${
@@ -345,11 +373,11 @@ function ServicesPage() {
 
       {/* STEP 0: PILIH STUDIO */}
       {step === 0 && (
-        <>
-          <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
+        <div className="flex flex-col items-center">
+          <h1 className="text-3xl font-bold text-gray-800 mb-8">
             Pilih Lokasi
           </h1>
-          <div className="max-w-md mx-auto">
+          <div className="w-full max-w-md">
             <div className="p-4 mb-6 bg-white rounded-lg shadow-md text-center">
               <div className="flex justify-center mb-4">
                 <img
@@ -411,54 +439,56 @@ function ServicesPage() {
               Lanjutkan
             </button>
           </div>
-        </>
+        </div>
       )}
 
       {/* STEP 1: PILIH PAKET */}
       {step === 1 && (
-        <>
-          <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
+        <div className="flex flex-col items-center w-full">
+          <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
             Pilih Paket
           </h1>
-          <button
-            onClick={() => setStep(0)}
-            className="mb-6 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
-          >
-            ← Kembali
-          </button>
+          <div className="w-full max-w-3xl mb-6 flex justify-start">
+            <button
+              onClick={() => setStep(0)}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
+            >
+              ← Kembali
+            </button>
+          </div>
           <p className="text-center text-lg font-semibold mb-6">
-            Studio terpilih: <span className="text-blue-600">{selectedStudio.name}</span>
+            Studio terpilih:{" "}
+            <span className="text-blue-600">{selectedStudio.name}</span>
           </p>
-
-          <div className="max-w-3xl mx-auto">
+          <div className="w-full max-w-3xl">
             <h3 className="text-lg font-semibold mb-3">Pilih Paket</h3>
             {loadingPackages ? (
-              <p className="text-gray-500">Memuat paket...</p>
+              <p className="text-gray-500 text-center">Memuat paket...</p>
             ) : (
               <div className="grid gap-3">
-                {packages.map((pkg) => (
+                {Object.keys(groupedPackages).map((categoryName) => (
                   <div
-                    key={pkg.id}
-                    className="border rounded-lg p-3 flex gap-4 items-center cursor-pointer hover:bg-gray-100 transition-colors duration-200"
+                    key={categoryName}
+                    className="border rounded-lg p-3 flex items-center gap-4 cursor-pointer hover:bg-gray-100 transition-colors duration-200"
                   >
-                    {pkg.image_url && (
+                    {groupedPackages[categoryName][0]?.image_url && (
                       <img
-                        src={`http://localhost:8080/assets/images/${pkg.image_url}`}
-                        alt={pkg.nama_paket}
+                        src={`http://localhost:8080/assets/images/${groupedPackages[categoryName][0]?.image_url}`}
+                        alt={categoryName}
                         className="w-24 h-24 object-cover rounded-lg"
                       />
                     )}
-                    <div className="flex-grow">
-                      <p className="font-bold text-lg">{pkg.nama_paket}</p>
-                      <p className="text-sm text-gray-700 mb-2">
-                        {pkg.deskripsi_paket}
-                      </p>
+                    <div className="flex-grow flex flex-col justify-center">
+                      <p className="font-bold text-lg">{categoryName}</p>
                       <p className="text-md text-gray-900 font-semibold">
-                        Rp {pkg.harga.toLocaleString("id-ID")}
+                        Mulai dari Rp{" "}
+                        {groupedPackages[categoryName][0]?.harga.toLocaleString(
+                          "id-ID"
+                        )}
                       </p>
                     </div>
                     <button
-                      onClick={() => handlePackageClick(pkg)}
+                      onClick={() => handleOpenDetailModal(categoryName)}
                       className="bg-green-600 text-white px-4 py-2 rounded-md font-medium hover:bg-green-700 transition"
                     >
                       Pilih
@@ -468,97 +498,118 @@ function ServicesPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
 
-          {showModal && selectedPackage && (
-            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-              <div className="bg-white p-6 rounded-lg w-full max-w-sm flex flex-col items-center text-center">
-                {selectedPackage.image_url && (
-                  <img
-                    src={`http://localhost:8080/assets/images/${selectedPackage.image_url}`}
-                    alt={selectedPackage.nama_paket}
-                    className="w-48 h-48 object-cover rounded-lg mb-4"
-                  />
-                )}
-                <h2 className="text-lg font-bold mb-1">
-                  {selectedPackage.nama_paket}
-                </h2>
-                <p className="text-sm text-gray-600 mb-2">
-                  Rp {selectedPackage.harga.toLocaleString("id-ID")}
-                </p>
-                <div className="flex items-center gap-3 mb-4">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-1 bg-gray-200 rounded"
-                  >
-                    -
-                  </button>
-                  <span className="font-semibold">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-3 py-1 bg-gray-200 rounded"
-                  >
-                    +
-                  </button>
-                </div>
-                <div className="flex justify-center gap-2">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={handleAddToCart}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Tambah
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {cart.length > 0 && (
-            <div className="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-white shadow-lg border rounded-lg p-4 w-96">
-              <h3 className="font-bold mb-2">Keranjang</h3>
-              <ul className="max-h-32 overflow-y-auto mb-3">
-                {cart.map((item, index) => (
-                  <li key={index} className="flex justify-between text-sm mb-1">
-                    <span>
-                      {item.nama_paket} × {item.quantity}
-                    </span>
-                    <span>
-                      Rp {(item.harga * item.quantity).toLocaleString("id-ID")}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => {
-                  setStep(2);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className="w-full bg-green-600 text-white py-2 rounded"
-              >
-                Lanjutkan →
+      {/* MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white p-6 rounded-lg w-full max-w-lg flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">Pilih layanan</h2>
+              <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-          )}
-        </>
+            
+            {selectedModalPackage && (
+              <div className="flex justify-center mb-4">
+                <img
+                  src={`http://localhost:8080/assets/images/${selectedModalPackage.image_url}`}
+                  alt={selectedModalPackage.nama_paket}
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+              </div>
+            )}
+            
+            <div className="flex-1 overflow-y-auto pr-2">
+              {modalCurrentPackage && (
+                <>
+                  <div className="mb-4">
+                    <h3 className="font-bold text-lg">{modalCurrentPackage[0]?.nama_paket.split(' - ')[0]}</h3>
+                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{modalCurrentPackage[0]?.deskripsi_paket}</p>
+                  </div>
+                  <div className="mb-4">
+                    <p className="font-semibold text-gray-700 mb-2">{modalCurrentPackage.length} Pilihan</p>
+                    {modalCurrentPackage.map(pkg => (
+                      <div
+                        key={pkg.id}
+                        onClick={() => setSelectedModalPackage(pkg)}
+                        className={`flex items-center gap-4 p-3 border rounded-lg mb-2 cursor-pointer transition ${
+                          selectedModalPackage?.id === pkg.id ? 'bg-blue-50 border-blue-600' : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="package_selection"
+                          checked={selectedModalPackage?.id === pkg.id}
+                          readOnly
+                          className="form-radio h-5 w-5 text-blue-600"
+                        />
+                        {pkg.image_url && (
+                          <img
+                            src={`http://localhost:8080/assets/images/${pkg.image_url}`}
+                            alt={pkg.nama_paket}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                        )}
+                        <div className="flex-grow">
+                          <p className="font-medium">{pkg.nama_paket}</p>
+                          <p className="text-sm text-gray-600">Rp {pkg.harga.toLocaleString("id-ID")} • 10min</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between mt-auto pt-4 border-t">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="px-3 py-1 bg-gray-200 rounded-lg"
+                >
+                  -
+                </button>
+                <span className="font-semibold">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="px-3 py-1 bg-gray-200 rounded-lg"
+                >
+                  +
+                </button>
+              </div>
+              <button
+                onClick={handleAddToCart}
+                className="px-6 py-2 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition"
+              >
+                Tambah
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* STEP 2: PILIH TANGGAL & WAKTU */}
       {step === 2 && (
-        <>
+        <div className="flex flex-col items-center w-full">
           <h1 className="text-3xl font-bold text-center mb-4">
             Pilih Tanggal & Waktu
           </h1>
-          <button
-            onClick={() => setStep(1)}
-            className="mb-6 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
-          >
-            ← Kembali
-          </button>
+          <div className="w-full max-w-3xl mb-6 flex justify-start">
+            <button
+              onClick={() => setStep(1)}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
+            >
+              ← Kembali
+            </button>
+          </div>
+          <p className="text-center text-lg font-semibold mb-6">
+            Studio terpilih: <span className="text-blue-600">{selectedStudio.name}</span>
+          </p>
 
           <p className="text-center text-lg font-semibold text-gray-700 mb-2">
             {weekStartDate.toLocaleString("id-ID", { month: "long", year: "numeric" })}
@@ -583,119 +634,129 @@ function ServicesPage() {
             </button>
           </div>
 
-          {dateMode === "week" && (
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <button
-                onClick={handlePrevWeek}
-                className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 shadow-sm"
-              >
-                ←
-              </button>
-              {getWeekDays().map((day) => (
+          <div className="w-full max-w-3xl">
+            {dateMode === "week" && (
+              <div className="flex items-center justify-center gap-3 mb-6 overflow-x-auto pb-2">
                 <button
-                  key={day.toISOString()}
-                  onClick={() => setSelectedDate(day)}
-                  className={`flex flex-col items-center px-4 py-3 rounded-xl shadow-sm text-sm transition-colors duration-200 ${
-                    selectedDate.toDateString() === day.toDateString()
-                      ? "bg-blue-600 text-white"
-                      : "bg-white border border-gray-200 hover:bg-blue-50"
-                  }`}
+                  onClick={handlePrevWeek}
+                  className="flex-shrink-0 px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 shadow-sm"
                 >
-                  <span className="text-xs">{getDayName(day)}</span>
-                  <span className="text-lg font-semibold">{day.getDate()}</span>
+                  ←
                 </button>
-              ))}
+                {getWeekDays().map((day) => (
+                  <button
+                    key={day.toISOString()}
+                    onClick={() => setSelectedDate(day)}
+                    className={`flex-shrink-0 flex flex-col items-center px-4 py-3 rounded-xl shadow-sm text-sm transition-colors duration-200 ${
+                      selectedDate.toDateString() === day.toDateString()
+                        ? "bg-blue-600 text-white"
+                        : "bg-white border border-gray-200 hover:bg-blue-50"
+                    }`}
+                  >
+                    <span className="text-xs">{getDayName(day)}</span>
+                    <span className="text-lg font-semibold">{day.getDate()}</span>
+                  </button>
+                ))}
+                <button
+                  onClick={handleNextWeek}
+                  className="flex-shrink-0 px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 shadow-sm"
+                >
+                  →
+                </button>
+              </div>
+            )}
+
+            {dateMode === "calendar" && (
+              <div className="flex justify-center mb-6">
+                <input
+                  type="date"
+                  value={selectedDate.toISOString().split("T")[0]}
+                  onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                  className="border px-4 py-2 rounded-lg shadow-sm"
+                />
+              </div>
+            )}
+
+            {loadingSlots ? (
+              <p className="text-center text-gray-500">Memuat jadwal...</p>
+            ) : (
+              <>
+                <p className="text-center text-gray-700 mb-3 font-medium">
+                  Kapan kamu ingin memulai?
+                </p>
+
+                <h3 className="text-center mt-6 mb-3 text-lg font-semibold border-b pb-1">
+                  Pagi
+                </h3>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {availableSlots.pagi.length > 0 ? (
+                    availableSlots.pagi.map((slotObj, index) => (
+                      <button
+                        key={index}
+                        disabled={!slotObj.isAvailable}
+                        onClick={() => handleSlotClick(slotObj.time)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium shadow-sm transition-colors duration-200 ${
+                          formData.waktu_mulai === slotObj.time
+                            ? "bg-blue-600 text-white"
+                            : slotObj.isAvailable
+                            ? "bg-gray-100 text-gray-800 hover:bg-blue-50"
+                            : "bg-red-100 text-red-500 cursor-not-allowed"
+                        }`}
+                      >
+                        {slotObj.time}
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">Tidak ada slot tersedia.</p>
+                  )}
+                </div>
+
+                <h3 className="text-center mt-8 mb-3 text-lg font-semibold border-b pb-1">
+                  Sore
+                </h3>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {availableSlots.sore.length > 0 ? (
+                    availableSlots.sore.map((slotObj, index) => (
+                      <button
+                        key={index}
+                        disabled={!slotObj.isAvailable}
+                        onClick={() => handleSlotClick(slotObj.time)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium shadow-sm transition-colors duration-200 ${
+                          formData.waktu_mulai === slotObj.time
+                            ? "bg-blue-600 text-white"
+                            : slotObj.isAvailable
+                            ? "bg-gray-100 text-gray-800 hover:bg-blue-50"
+                            : "bg-red-100 text-red-500 cursor-not-allowed"
+                        }`}
+                      >
+                        {slotObj.time}
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">Tidak ada slot tersedia.</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            <div className="flex justify-center mt-10">
               <button
-                onClick={handleNextWeek}
-                className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 shadow-sm"
+                onClick={() => {
+                  setStep(3);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                disabled={!formData.waktu_mulai}
+                className={`px-8 py-3 rounded-full font-semibold shadow-md ${
+                  formData.waktu_mulai
+                    ? "bg-green-600 text-white hover:bg-green-700"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
               >
-                →
+                Lanjutkan →
               </button>
             </div>
-          )}
-
-          {dateMode === "calendar" && (
-            <div className="flex justify-center mb-6">
-              <input
-                type="date"
-                value={selectedDate.toISOString().split("T")[0]}
-                onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                className="border px-4 py-2 rounded-lg shadow-sm"
-              />
-            </div>
-          )}
-
-          {loadingSlots ? (
-            <p className="text-center text-gray-500">Memuat jadwal...</p>
-          ) : (
-            <>
-              <p className="text-center text-gray-700 mb-3 font-medium">
-                Kapan kamu ingin memulai?
-              </p>
-
-              <h3 className="text-center mt-6 mb-3 text-lg font-semibold border-b pb-1">
-                Pagi
-              </h3>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {availableSlots.pagi.map((slotObj, index) => (
-                  <button
-                    key={index}
-                    disabled={!slotObj.isAvailable}
-                    onClick={() => handleSlotClick(slotObj.time)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium shadow-sm transition-colors duration-200 ${
-                      formData.waktu_mulai === slotObj.time
-                        ? "bg-blue-600 text-white"
-                        : slotObj.isAvailable
-                        ? "bg-gray-100 text-gray-800 hover:bg-blue-50"
-                        : "bg-red-100 text-red-500 cursor-not-allowed"
-                    }`}
-                  >
-                    {slotObj.time}
-                  </button>
-                ))}
-              </div>
-
-              <h3 className="text-center mt-8 mb-3 text-lg font-semibold border-b pb-1">
-                Sore
-              </h3>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {availableSlots.sore.map((slotObj, index) => (
-                  <button
-                    key={index}
-                    disabled={!slotObj.isAvailable}
-                    onClick={() => handleSlotClick(slotObj.time)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium shadow-sm transition-colors duration-200 ${
-                      formData.waktu_mulai === slotObj.time
-                        ? "bg-blue-600 text-white"
-                        : slotObj.isAvailable
-                        ? "bg-gray-100 text-gray-800 hover:bg-blue-50"
-                        : "bg-red-100 text-red-500 cursor-not-allowed"
-                    }`}
-                  >
-                    {slotObj.time}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
-          <div className="flex justify-center mt-10">
-            <button
-              onClick={() => {
-                setStep(3);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              disabled={!formData.waktu_mulai}
-              className={`px-8 py-3 rounded-full font-semibold shadow-md ${
-                formData.waktu_mulai
-                  ? "bg-green-600 text-white hover:bg-green-700"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              Lanjutkan →
-            </button>
           </div>
-        </>
+        </div>
       )}
 
       {/* STEP 3: KONFIRMASI PEMESANAN */}
@@ -704,13 +765,14 @@ function ServicesPage() {
           <h1 className="text-2xl font-bold text-center mb-6">
             Konfirmasi Pemesanan
           </h1>
-          <button
-            onClick={() => setStep(2)}
-            className="mb-4 px-3 py-1 bg-gray-300 rounded"
-          >
-            ← Kembali
-          </button>
-
+          <div className="max-w-6xl mx-auto">
+            <button
+              onClick={() => setStep(2)}
+              className="mb-4 px-3 py-1 bg-gray-300 rounded"
+            >
+              ← Kembali
+            </button>
+          </div>
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-lg shadow-md">
               <BookingSummary

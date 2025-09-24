@@ -1,12 +1,27 @@
 // src/controllers/package.controller.js
 const connection = require("../db.js");
-const fs = require('fs'); // Modul bawaan Node.js untuk berinteraksi dengan file system
-const path = require('path'); // Modul bawaan Node.js untuk menangani path
+const fs = require('fs');
+const path = require('path');
 
-// Mengambil semua paket
+// Mengambil semua paket, bisa difilter berdasarkan studio_name
 exports.findAll = (req, res) => {
-    connection.query("SELECT * FROM packages", (err, data) => {
+    const { studio_name } = req.query; // Tangkap parameter studio_name dari query
+
+    let query = "SELECT * FROM packages";
+    let params = [];
+
+    // Jika parameter studio_name ada, tambahkan klausa WHERE
+    if (studio_name) {
+        query += " WHERE studio_name = ?";
+        params.push(studio_name);
+    }
+    
+    // Urutkan berdasarkan nama paket agar tampilan lebih rapi
+    query += " ORDER BY nama_paket ASC";
+
+    connection.query(query, params, (err, data) => {
         if (err) {
+            console.error("Error fetching packages:", err);
             res.status(500).send({ message: err.message || "Terjadi kesalahan saat mengambil data paket." });
         } else {
             res.send(data);
@@ -21,7 +36,6 @@ exports.create = (req, res) => {
         return;
     }
     
-    // Pastikan ada file yang diunggah saat membuat baru
     if (!req.file) {
         res.status(400).send({ message: "Gambar paket harus diunggah." });
         return;
@@ -31,8 +45,8 @@ exports.create = (req, res) => {
         nama_paket: req.body.nama_paket,
         harga: req.body.harga,
         deskripsi_paket: req.body.deskripsi_paket,
-        studio_name: req.body.studio_name, // Tambahkan studio_name di sini
-        image_url: req.file.filename, // Nama file dari Multer
+        studio_name: req.body.studio_name,
+        image_url: req.file.filename,
     };
 
     connection.query("INSERT INTO packages SET ?", newPackage, (err, data) => {
@@ -51,10 +65,9 @@ exports.update = (req, res) => {
         nama_paket: req.body.nama_paket,
         harga: req.body.harga,
         deskripsi_paket: req.body.deskripsi_paket,
-        studio_name: req.body.studio_name, // Tambahkan studio_name di sini
+        studio_name: req.body.studio_name,
     };
 
-    // Jika ada file baru diunggah, hapus gambar lama dan perbarui URL
     if (req.file) {
         connection.query("SELECT image_url FROM packages WHERE id = ?", packageId, (err, result) => {
             if (err) {
@@ -73,7 +86,6 @@ exports.update = (req, res) => {
             updatePackageInDb(packageId, updatedData, res);
         });
     } else {
-        // Jika tidak ada file baru, langsung update data tanpa mengubah image_url
         updatePackageInDb(packageId, updatedData, res);
     }
 };
@@ -94,7 +106,6 @@ function updatePackageInDb(id, data, res) {
 exports.delete = (req, res) => {
     const packageId = req.params.id;
 
-    // Temukan URL gambar lama
     connection.query("SELECT image_url FROM packages WHERE id = ?", packageId, (err, result) => {
         if (err) {
             return res.status(500).send({ message: "Gagal menemukan paket untuk dihapus." });
@@ -111,7 +122,6 @@ exports.delete = (req, res) => {
             }
         }
 
-        // Hapus entri dari database
         connection.query("DELETE FROM packages WHERE id = ?", packageId, (err, result) => {
             if (err) {
                 res.status(500).send({ message: "Gagal menghapus paket." });

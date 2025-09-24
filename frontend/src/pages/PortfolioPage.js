@@ -28,7 +28,6 @@ function PortfolioPage() {
   }, []);
 
   return (
-    // Tambahkan 'pt-32' untuk memberikan jarak lebih dari atas
     <div className="font-sans text-gray-900 bg-white min-h-screen pt-32">
       {/* Header Utama */}
       <div className="max-w-screen-xl mx-auto px-5 mb-16">
