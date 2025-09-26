@@ -8,11 +8,14 @@ import PackagesManager from '../components/dashboard/PackagesManager';
 import BookingsCalendar from '../components/dashboard/BookingsCalendar';
 import BookingsData from '../components/dashboard/BookingsData';
 import CustomersData from '../components/dashboard/CustomersData';
+import PortfolioManager from '../components/dashboard/PortfolioManager';
+import CustomerDetail from '../components/dashboard/CustomerDetail'; // Komponen baru
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('bookings-data');
     const [selectedStudio, setSelectedStudio] = useState('1');
+    const [selectedCustomer, setSelectedCustomer] = useState(null); // State baru untuk detail pelanggan
 
     const {
         posts,
@@ -36,7 +39,9 @@ const AdminDashboard = () => {
         handleSort,
         renderSortArrow,
         formatShortDate,
-        getPackageName
+        getPackageName,
+        portfolioItems,
+        fetchPortfolioItems
     } = useAdminData(activeTab, selectedStudio);
 
     const renderContent = () => {
@@ -65,6 +70,11 @@ const AdminDashboard = () => {
                     />
                 );
             case 'customers':
+                // Tampilkan detail pelanggan jika ada yang dipilih
+                if (selectedCustomer) {
+                    return <CustomerDetail customer={selectedCustomer} onBack={() => setSelectedCustomer(null)} />;
+                }
+                // Tampilkan tabel pelanggan
                 return (
                     <CustomersData
                         customers={sortedCustomers}
@@ -74,6 +84,16 @@ const AdminDashboard = () => {
                         renderSortArrow={renderSortArrow}
                         showModal={showModal}
                         fetchCustomers={fetchCustomers}
+                        onSelectCustomer={setSelectedCustomer} // Teruskan fungsi ini ke CustomersData
+                    />
+                );
+            case 'portfolio':
+                return (
+                    <PortfolioManager
+                        portfolioItems={portfolioItems}
+                        fetchPortfolioItems={fetchPortfolioItems}
+                        showModal={showModal}
+                        handleDelete={handleDelete}
                     />
                 );
             default:

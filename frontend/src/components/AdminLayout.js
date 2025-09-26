@@ -1,3 +1,4 @@
+// src/components/AdminLayout.js
 import React from 'react';
 
 const AdminLayout = ({ activeTab, setActiveTab, children }) => {
@@ -21,9 +22,12 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                     <button onClick={() => setActiveTab('customers')} className={`block w-full text-left py-4 px-6 mb-2 rounded-lg transition duration-300 ${activeTab === 'customers' ? 'bg-gray-700 text-white' : 'hover:bg-gray-800'}`}>
                         Data Pelanggan
                     </button>
+                    <button onClick={() => setActiveTab('portfolio')} className={`block w-full text-left py-4 px-6 mb-2 rounded-lg transition duration-300 ${activeTab === 'portfolio' ? 'bg-gray-700 text-white' : 'hover:bg-gray-800'}`}>
+                        Portfolio
+                    </button>
                     <button onClick={() => {
                         localStorage.removeItem('admin-token');
-                        window.location.href = '/admin/login'; // Menggunakan window.location.href untuk navigasi
+                        window.location.href = '/admin/login';
                     }} className="block w-full text-left py-4 px-6 rounded-lg transition duration-300 hover:bg-gray-800">
                         Logout
                     </button>

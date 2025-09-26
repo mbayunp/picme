@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const servicesController = require("../controllers/services.controller.js");
 const { verifyToken } = require("../middleware/auth.middleware.js");
+const { upload } = require("../middleware/multer.middleware.js"); // Pastikan ini sudah diimpor
 
 // Rute untuk Pemesanan (Services)
 router.get("/", verifyToken, servicesController.findAll);
@@ -12,5 +13,9 @@ router.delete("/:id", verifyToken, servicesController.delete);
 
 // Rute untuk Data Pelanggan
 router.get("/customers", verifyToken, servicesController.findAllCustomers);
+// --- Rute baru untuk impor dan ekspor ---
+router.get("/customers/export", verifyToken, servicesController.exportCustomers);
+router.post("/customers/import", verifyToken, upload.single('csvFile'), servicesController.importCustomers);
+// --- Akhir rute baru ---
 
 module.exports = router;

@@ -211,7 +211,7 @@ function HomePage() {
             <section className="bg-[#0d1a2c] text-white min-h-screen flex items-center px-12 relative overflow-hidden">
                 <LiquidBlobAnimation />
                 <div className="max-w-7xl mx-auto z-10 w-full relative">
-                    <h1 className="text-5xl font-bold leading-tight mb-6">
+                    <h1 className="text-7xl font-bold leading-tight mb-6">
                         <span className="block">Taking Some Happiness</span>
                         <span className="block text-[#b3e6ff]">Smile Today</span>
                     </h1>

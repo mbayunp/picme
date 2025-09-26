@@ -1,19 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Import gambar lokal Anda
-import portfolio1 from '../assets/images/portfolio1.jpg';
-import portfolio2 from '../assets/images/portfolio2.jpg';
-import portfolio3 from '../assets/images/portfolio3.jpg';
-
 function PortfolioPage() {
   const [portfolioItems, setPortfolioItems] = useState([]);
-
-  const imageMap = {
-    'portfolio1.jpg': portfolio1,
-    'portfolio2.jpg': portfolio2,
-    'portfolio3.jpg': portfolio3,
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchPortfolio = async () => {
@@ -22,10 +13,29 @@ function PortfolioPage() {
         setPortfolioItems(response.data);
       } catch (error) {
         console.error('Error fetching portfolio:', error);
+        setError('Gagal memuat item portfolio. Coba lagi nanti.');
+      } finally {
+        setLoading(false);
       }
     };
     fetchPortfolio();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="font-sans text-gray-900 bg-white min-h-screen pt-32 text-center">
+        <p className="text-xl">Memuat portfolio...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="font-sans text-gray-900 bg-white min-h-screen pt-32 text-center">
+        <p className="text-red-500 text-xl">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="font-sans text-gray-900 bg-white min-h-screen pt-32">
@@ -42,21 +52,26 @@ function PortfolioPage() {
         </div>
       </div>
 
-      {/* Grid Portfolio dengan Konsep Masonry */}
-      <div className="max-w-screen-xl mx-auto px-5 columns-1 sm:columns-2 lg:columns-3 gap-8">
+      {/* Grid Portfolio */}
+      <div className="max-w-screen-xl mx-auto px-5 grid grid-cols-1 md:grid-cols-2 gap-8">
         {portfolioItems.map(item => (
           <div 
             key={item.id} 
-            className="mb-8 p-3 transform transition duration-300 hover:-translate-y-1 hover:shadow-2xl bg-white rounded-lg break-inside-avoid-column"
+            className="group transform transition duration-300 hover:-translate-y-1 hover:shadow-2xl bg-white rounded-xl overflow-hidden"
           >
             <img 
-              src={imageMap[item.image_url]} 
+              src={`http://localhost:8080/${item.image_url}`} 
               alt={item.title} 
-              className="w-full object-cover rounded-md" 
+              className="w-full h-80 object-cover rounded-t-xl group-hover:scale-105 transition-transform duration-300"
             />
-            <div className="mt-4">
-              <div className="text-xs text-gray-500 uppercase tracking-wider">{item.title} • May 24, 2024</div>
-              <h3 className="mt-2 text-xl font-medium">{item.description}</h3>
+            <div className="p-6">
+              <div className="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider">
+                <span>{item.kategori}</span>
+                <span className="text-gray-400">•</span>
+                <span>May 24, 2024</span>
+              </div>
+              <h3 className="mt-2 text-xl font-bold">{item.title}</h3>
+              <p className="mt-2 text-gray-600">{item.description}</p>
             </div>
           </div>
         ))}

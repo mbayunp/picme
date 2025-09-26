@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const connection = require("./db.js");
+const { upload } = require("./middleware/multer.middleware.js");
 
 const app = express();
 
@@ -12,12 +13,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Middleware untuk melayani file statis dari folder public di root proyek
-// Ini adalah perbaikan utamanya
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Endpoint dasar
 app.get("/", (req, res) => {
-    res.json({ message: "Welcome to the Photo Studio API." });
+    res.json({ message: "Welcome to the Photo Studio API." });
 });
 
 // Import dan gunakan route
@@ -35,8 +35,18 @@ app.use("/api/posts", postRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/packages", packageRoutes);
 
+// Rute khusus untuk upload gambar, terpisah dari rute portfolio
+app.post("/api/upload", upload.single('image'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).send({ message: "File tidak diupload." });
+    }
+    // Jalur gambar yang akan disimpan di database
+    const imageUrl = `assets/images/${req.file.filename}`;
+    res.send({ imageUrl });
+});
+
 // Jalankan server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}.`);
+    console.log(`Server is running on port ${PORT}.`);
 });
