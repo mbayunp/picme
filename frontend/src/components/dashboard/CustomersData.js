@@ -135,7 +135,7 @@ const CustomersData = ({ customers, sortKey, sortDirection, handleSort, renderSo
             const bValue = b[sortKey];
             if (aValue === bValue) return 0;
             let comparison = 0;
-            if (sortKey === 'last_visit_date' || sortKey === 'tanggal_lahir') {
+            if (sortKey === 'last_visit_date') {
                 comparison = moment(aValue).diff(moment(bValue));
             } else {
                 if (aValue > bValue) comparison = 1;
@@ -241,8 +241,8 @@ const CustomersData = ({ customers, sortKey, sortDirection, handleSort, renderSo
                             <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort('tanggal_lahir')}>Tanggal Lahir {renderSortArrow('tanggal_lahir')}</th>
                             <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
                             <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Pemesanan</th>
                             <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Pemesanan</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -264,10 +264,10 @@ const CustomersData = ({ customers, sortKey, sortDirection, handleSort, renderSo
                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{customer.tanggal_lahir || '-'}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{customer.tags || '-'}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{customer.status || '-'}</td>
-                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{customer.total_bookings}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-left text-sm font-medium">
                                     <button onClick={() => handleEditCustomerClick(customer)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
                                 </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{customer.total_bookings}</td>
                             </tr>
                         ))}
                     </tbody>

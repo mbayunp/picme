@@ -1,6 +1,8 @@
+// src/controllers/services.controller.js
+
 const connection = require("../db.js");
-const { stringify } = require("csv-stringify"); // Diperlukan untuk ekspor
-const { parse } = require("csv-parse"); // Diperlukan untuk impor
+const { stringify } = require("csv-stringify");
+const { parse } = require("csv-parse");
 const fs = require("fs");
 const path = require("path");
 const moment = require("moment");
@@ -31,7 +33,6 @@ function generateTimeSlots(start, end, interval) {
 
 /**
  * GET /services/slots
- * Menghasilkan slot Pagi & Sore sesuai kebutuhan
  */
 exports.getAvailableSlots = (req, res) => {
   const { date, studio } = req.query;
@@ -98,7 +99,6 @@ exports.create = (req, res) => {
     });
   }
 
-  // hitung waktu_selesai
   const [hour, minute] = waktu_mulai.split(":").map(Number);
   const startTime = moment().set({hour: hour, minute: minute, second: 0, millisecond: 0});
   const endTime = moment(startTime).add(15, 'minutes');
@@ -114,6 +114,7 @@ exports.create = (req, res) => {
     jumlah_orang: jumlah_orang || 1,
     studio_name,
     package_id,
+    status: 'pending' // Tambahkan status default
   };
 
   connection.query("INSERT INTO services SET ?", newBooking, (err, data) => {
@@ -238,9 +239,27 @@ exports.delete = (req, res) => {
   });
 };
 
+// Fungsi baru untuk mengkonfirmasi pemesanan
+exports.confirmBooking = (req, res) => {
+  const bookingId = req.params.id;
+  const updateStatus = { status: 'confirmed' };
+  const query = "UPDATE services SET ? WHERE id = ?";
+
+  connection.query(query, [updateStatus, bookingId], (err, result) => {
+    if (err) {
+      console.error("❌ Error confirming booking:", err.sqlMessage);
+      return res.status(500).send({ message: `Gagal mengkonfirmasi pemesanan: ${err.sqlMessage}` });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).send({ message: "Pemesanan tidak ditemukan." });
+    }
+    res.send({ message: "Pemesanan berhasil dikonfirmasi." });
+  });
+};
+
+
 /**
  * GET /services/customers
- * Mengambil daftar pelanggan unik dengan jumlah pemesanan dan kunjungan terakhir.
  */
 exports.findAllCustomers = (req, res) => {
     const query = `
@@ -265,7 +284,7 @@ exports.findAllCustomers = (req, res) => {
 };
 
 exports.exportCustomers = (req, res) => {
-    connection.query("SELECT *, COUNT(*) AS total_bookings FROM services GROUP BY nama, email, nomor_whatsapp", (err, data) => {
+    connection.query("SELECT nama, email, nomor_whatsapp, tanggal, waktu_mulai FROM services", (err, data) => {
         if (err) {
             return res.status(500).send({ message: err.message });
         }
@@ -284,28 +303,32 @@ exports.importCustomers = (req, res) => {
     if (!req.file) {
         return res.status(400).send({ message: "File CSV tidak diunggah." });
     }
+
     const filePath = path.join(__dirname, '..', '..', req.file.path);
     const fileContent = fs.readFileSync(filePath, 'utf-8');
-    parse(fileContent, { columns: true, skip_empty_lines: true }, (err, records) => {
+
+    parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true
+    }, (err, records) => {
         if (err) {
-            console.error(err);
+            console.error("❌ Error parsing CSV:", err);
             return res.status(500).send({ message: "Gagal mem-parsing file CSV." });
         }
-        const query = "INSERT INTO services (nama, email, nomor_whatsapp, tanggal, waktu_mulai, waktu_selesai, jumlah_orang, studio_name, package_id) VALUES ?";
+
         const values = records.map(record => [
             record.nama,
             record.email,
             record.nomor_whatsapp,
             record.tanggal,
-            record.waktu_mulai,
-            record.waktu_selesai,
-            record.jumlah_orang,
-            record.studio_name,
-            record.package_id
+            record.waktu_mulai
         ]);
+        
+        const query = "INSERT INTO services (nama, email, nomor_whatsapp, tanggal, waktu_mulai) VALUES ?";
+
         connection.query(query, [values], (err, result) => {
             if (err) {
-                console.error(err);
+                console.error("❌ Error inserting into DB:", err);
                 return res.status(500).send({ message: "Gagal menyimpan data ke database." });
             }
             fs.unlinkSync(filePath);

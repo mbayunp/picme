@@ -1,46 +1,26 @@
-// src/components/dashboard/CustomerDetail.js
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaUserCircle, FaBook, FaBoxOpen, FaTicketAlt, FaStar, FaChevronDown } from 'react-icons/fa';
+import moment from 'moment';
 
-function CustomerDetail({ customer, onBack }) {
+function CustomerDetail({ customer, onBack, customerDetailData, fetchCustomerDetail }) {
     const [activeTab, setActiveTab] = useState('agenda');
-    const [customerData, setCustomerData] = useState(null);
     const [loading, setLoading] = useState(true);
-
-    // Data dummy untuk demonstrasi, ganti dengan data dari API
-    const dummyData = {
-        summary: {
-            totalPenjualan: 0,
-            penggunaanVoucher: 0,
-            belumBayar: 0,
-            totalBooking: 0,
-            komplit: 0,
-            pembatalan: 0,
-            tidakHadir: 0,
-        },
-        upcomingBookings: [],
-        pastBookings: [
-            {
-                tanggal: '2025-09-25',
-                tipe: 'Layanan',
-                nama: 'Paket Couple (10min)',
-                staff: 'Picme Photo Studio',
-                lokasi: 'Picme Photo Studio 1',
-                total: '30.000,00',
-                catatan: '-',
-                status: 'CANCELED',
-            }
-        ]
-    };
+    
+    useEffect(() => {
+        if (customer) {
+            setLoading(true);
+            fetchCustomerDetail(customer.nomor_whatsapp);
+        }
+    }, [customer, fetchCustomerDetail]);
 
     useEffect(() => {
-        setCustomerData(dummyData);
-        setLoading(false);
-    }, [customer]);
+        if (customerDetailData) {
+            setLoading(false);
+        }
+    }, [customerDetailData]);
 
-    if (loading) {
+    if (loading || !customerDetailData) {
         return <div>Memuat data pelanggan...</div>;
     }
 
@@ -66,8 +46,8 @@ function CustomerDetail({ customer, onBack }) {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {customerData.upcomingBookings.length > 0 ? (
-                                        customerData.upcomingBookings.map((booking, index) => (
+                                    {customerDetailData.upcomingBookings.length > 0 ? (
+                                        customerDetailData.upcomingBookings.map((booking, index) => (
                                             <tr key={index}>
                                                 {/* Kolom data booking */}
                                             </tr>
@@ -79,7 +59,6 @@ function CustomerDetail({ customer, onBack }) {
                                     )}
                                 </tbody>
                             </table>
-                            {/* Pagination Akan Datang */}
                             <div className="py-3 px-4 flex justify-between items-center text-sm">
                                 <span className="text-gray-500">Total 0</span>
                                 <div className="flex space-x-2 items-center">
@@ -110,8 +89,8 @@ function CustomerDetail({ customer, onBack }) {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {customerData.pastBookings.length > 0 ? (
-                                        customerData.pastBookings.map((booking, index) => (
+                                    {customerDetailData.pastBookings.length > 0 ? (
+                                        customerDetailData.pastBookings.map((booking, index) => (
                                             <tr key={index}>
                                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-green-600">{booking.tanggal}</td>
                                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{booking.tipe}</td>
@@ -134,7 +113,6 @@ function CustomerDetail({ customer, onBack }) {
                                     )}
                                 </tbody>
                             </table>
-                            {/* Pagination Berlalu */}
                             <div className="py-3 px-4 flex justify-between items-center text-sm">
                                 <span className="text-gray-500">Total 1</span>
                                 <div className="flex space-x-2 items-center">
@@ -154,13 +132,11 @@ function CustomerDetail({ customer, onBack }) {
 
     return (
         <div className="p-8">
-            {/* Tombol Kembali */}
             <button onClick={onBack} className="mb-6 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">
                 ← Kembali
             </button>
             <h1 className="text-3xl font-bold mb-8">Ubah Data Pelanggan</h1>
             
-            {/* Header Ringkasan */}
             <div className="bg-white p-6 rounded-lg shadow-md border-b-2 border-green-600">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center space-x-4">
@@ -168,9 +144,8 @@ function CustomerDetail({ customer, onBack }) {
                             <FaUserCircle className="w-12 h-12 text-gray-500" />
                         </span>
                         <div>
-                            <h3 className="text-2xl font-bold">Bayu</h3>
+                            <h3 className="text-2xl font-bold">{customerDetailData.nama}</h3>
                             <div className="flex space-x-2 mt-2">
-                                {/* Tombol Aksi */}
                                 <button className="p-2 border rounded-full text-green-600 hover:bg-green-50"><FaBook /></button>
                                 <button className="p-2 border rounded-full text-green-600 hover:bg-green-50"><FaBoxOpen /></button>
                                 <button className="p-2 border rounded-full text-green-600 hover:bg-green-50"><FaTicketAlt /></button>
@@ -178,7 +153,6 @@ function CustomerDetail({ customer, onBack }) {
                             </div>
                         </div>
                     </div>
-                    {/* Tombol Aksi Kanan */}
                     <div className="flex items-center space-x-2">
                         <button className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
                             <span>Agenda Baru</span>
@@ -187,24 +161,21 @@ function CustomerDetail({ customer, onBack }) {
                             <button className="bg-white text-gray-800 px-4 py-2 rounded-lg border flex items-center space-x-2">
                                 <span>Lainnya</span> <FaChevronDown />
                             </button>
-                            {/* Dropdown menu */}
                         </div>
                     </div>
                 </div>
 
-                {/* Statistik Ringkasan */}
                 <div className="grid grid-cols-2 md:grid-cols-7 gap-4 text-center mt-6 text-gray-600">
-                    <div><p className="font-semibold text-lg">{customerData.summary.totalPenjualan}</p><p className="text-sm">Total Pemesanan</p></div>
-                    <div><p className="font-semibold text-lg">{customerData.summary.penggunaanVoucher}</p><p className="text-sm">Penggunaan voucher</p></div>
-                    <div><p className="font-semibold text-lg text-red-500">{customerData.summary.belumBayar}</p><p className="text-sm">Belum bayar</p></div>
-                    <div><p className="font-semibold text-lg">{customerData.summary.totalBooking}</p><p className="text-sm">Total Booking</p></div>
-                    <div><p className="font-semibold text-lg">{customerData.summary.komplit}</p><p className="text-sm">Komplit</p></div>
-                    <div><p className="font-semibold text-lg">{customerData.summary.pembatalan}</p><p className="text-sm">Pembatalan</p></div>
-                    <div><p className="font-semibold text-lg text-red-500">{customerData.summary.tidakHadir}</p><p className="text-sm">Tidak hadir</p></div>
+                    <div><p className="font-semibold text-lg">{customerDetailData.summary.totalPenjualan}</p><p className="text-sm">Total Penjualan</p></div>
+                    <div><p className="font-semibold text-lg">{customerDetailData.summary.penggunaanVoucher}</p><p className="text-sm">Penggunaan voucher</p></div>
+                    <div><p className="font-semibold text-lg text-red-500">{customerDetailData.summary.belumBayar}</p><p className="text-sm">Belum bayar</p></div>
+                    <div><p className="font-semibold text-lg">{customerDetailData.summary.totalBooking}</p><p className="text-sm">Total Booking</p></div>
+                    <div><p className="font-semibold text-lg">{customerDetailData.summary.komplit}</p><p className="text-sm">Komplit</p></div>
+                    <div><p className="font-semibold text-lg">{customerDetailData.summary.pembatalan}</p><p className="text-sm">Pembatalan</p></div>
+                    <div><p className="font-semibold text-lg text-red-500">{customerDetailData.summary.tidakHadir}</p><p className="text-sm">Tidak hadir</p></div>
                 </div>
             </div>
 
-            {/* Navigasi Tabs */}
             <div className="mt-8 flex border-b border-gray-200">
                 <button 
                     onClick={() => setActiveTab('agenda')} 
@@ -218,10 +189,8 @@ function CustomerDetail({ customer, onBack }) {
                 >
                     Layanan
                 </button>
-                {/* Tabs lainnya */}
             </div>
 
-            {/* Konten Tabs */}
             <div className="mt-4 flex-grow">
                 {renderContent()}
             </div>
