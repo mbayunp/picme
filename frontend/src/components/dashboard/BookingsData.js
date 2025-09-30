@@ -1,3 +1,5 @@
+// src/components/dashboard/BookingsData.jsx
+
 import React, { useState } from 'react';
 import axios from 'axios';
 import moment from 'moment';
@@ -17,6 +19,7 @@ const BookingsData = ({
     fetchAllBookings,
     handleDelete,
     handleConfirmBooking,
+    handleCancelBooking,
 }) => {
     const [isEditingBooking, setIsEditingBooking] = useState(false);
     const [currentBooking, setCurrentBooking] = useState(null);
@@ -33,15 +36,12 @@ const BookingsData = ({
         status: ''
     });
 
-    // ✅ State untuk modal detail pemesanan
     const [selectedEvent, setSelectedEvent] = useState(null);
 
-    // ✅ Fungsi untuk menampilkan modal detail
     const handleViewDetail = (booking) => {
         setSelectedEvent(booking);
     };
 
-    // ✅ Fungsi untuk menutup modal detail
     const handleCloseDetailModal = () => {
         setSelectedEvent(null);
     };
@@ -285,6 +285,7 @@ const BookingsData = ({
                         selectedEvent={selectedEvent}
                         onClose={handleCloseDetailModal}
                         handleConfirmBooking={handleConfirmBooking}
+                        handleCancelBooking={handleCancelBooking}
                         showModal={showModal}
                     />
                 </div>

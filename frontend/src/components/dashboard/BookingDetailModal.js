@@ -1,3 +1,5 @@
+// src/components/dashboard/BookingDetailModal.jsx
+
 import React, { useState } from 'react';
 import moment from 'moment';
 import {
@@ -10,8 +12,7 @@ import {
     FaTimes
 } from 'react-icons/fa';
 
-// Komponen ini HANYA bertanggung jawab untuk konten modal.
-const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, showModal }) => {
+const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, showModal, handleDelete, handleCancelBooking }) => {
     const [isBookingDetailsOpen, setIsBookingDetailsOpen] = useState(true);
     const [isOtherDropdownOpen, setIsOtherDropdownOpen] = useState(false);
 
@@ -32,8 +33,10 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
 
     const onConfirmClick = () => {
         if (typeof handleConfirmBooking === 'function') {
-            onClose(); // Tutup modal detail
-            handleConfirmBooking(eventData.id, null); // Panggil modal konfirmasi dari hook
+            onClose(); 
+            handleConfirmBooking(eventData.id, () => {
+                // Tambahkan logika refresh data di sini jika diperlukan
+            }); 
         } else {
             console.error('handleConfirmBooking is not a function');
             if (typeof showModal === 'function') {
@@ -42,14 +45,53 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
         }
     };
 
+    const onCancelClick = () => {
+        if (typeof showModal === 'function' && typeof handleCancelBooking === 'function') {
+            onClose(); 
+            showModal(
+                'Konfirmasi Pembatalan',
+                `Apakah Anda yakin ingin membatalkan pemesanan ini?`,
+                () => handleCancelBooking(eventData.id),
+                () => {}
+            );
+        } else {
+            console.error('handleCancelBooking is not a function');
+            if (typeof showModal === 'function') {
+                showModal('Error', 'Fungsi pembatalan tidak tersedia.');
+            }
+        }
+    };
+
+    // ✅ Fungsi untuk memformat nomor WhatsApp
+    const formatWhatsAppNumber = (number) => {
+        if (!number) return null;
+        // Hapus karakter non-digit
+        const cleanNumber = number.replace(/\D/g, '');
+        // Ganti '0' di depan dengan '62'
+        if (cleanNumber.startsWith('0')) {
+            return `62${cleanNumber.substring(1)}`;
+        }
+        return cleanNumber;
+    };
+    
+    // Logika pengambilan harga yang sudah benar
     const totalHarga = eventData.package_price || 0;
-    const duration = eventData.package_duration || 60;
+    
+    // Hitung durasi dari waktu mulai dan waktu selesai
+    const startMoment = moment(eventData.waktu_mulai, 'HH:mm:ss');
+    const endMoment = moment(eventData.waktu_selesai, 'HH:mm:ss');
+    const duration = endMoment.diff(startMoment, 'minutes') || 0;
+    
+    // Format nomor WhatsApp untuk URL
+    const formattedWaNumber = formatWhatsAppNumber(eventData.nomor_whatsapp);
+    // Buat URL WhatsApp dengan pesan dinamis
+    const waUrl = formattedWaNumber 
+        ? `https://wa.me/${formattedWaNumber}?text=Halo%20${encodeURIComponent(eventData.nama)}%2C%20saya%20admin%20Picme%20Photo%20Studio%20ingin%20mengkonfirmasi%20pemesanan%20Anda%20pada%20tanggal%20${moment(eventData.tanggal).format('DD%20MMM%20YYYY')}.`
+        : '#';
 
     return (
-        // ✅ HANYA konten modal, tanpa overlay. Parent akan menyediakan overlay.
-        <div className="relative w-full max-w-xl mx-auto my-6 bg-white rounded-lg shadow-xl p-6">
+        <div className="relative w-full max-w-2xl mx-auto my-6 bg-white rounded-lg shadow-xl p-6">
             
-            {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-gray-200">
                 <h3 className="text-xl font-bold">Lihat Agenda</h3>
                 <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
@@ -57,7 +99,6 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                 </button>
             </div>
 
-            {/* Body */}
             <div className="py-4 overflow-y-auto max-h-[70vh]">
                 <div className="p-4 bg-gray-100 rounded-lg flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-4">
@@ -72,9 +113,15 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                         </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <button className="px-3 py-1 text-sm border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-50">
+                        {/* ✅ PERBAIKI: Menggunakan tag <a> dengan URL WhatsApp */}
+                        <a
+                            href={waUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1 text-sm border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-50"
+                        >
                             Hubungi
-                        </button>
+                        </a>
                         <button
                             className="px-3 py-1 text-sm border rounded-lg hover:bg-gray-200"
                             onClick={() => handleOtherAction('Lihat Detail')}
@@ -172,7 +219,6 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                 </div>
             </div>
 
-            {/* Footer */}
             <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
                 <div className="text-xl font-bold text-gray-800">
                     Total: <span className="text-red-500">Rp {totalHarga.toLocaleString('id-ID')}</span>
@@ -211,17 +257,10 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                                     </li>
                                     <li
                                         className="px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 text-red-600 cursor-pointer"
-                                        onClick={() => handleOtherAction('Batal')}
+                                        onClick={onCancelClick}
                                     >
-                                        <FaMapPin />
-                                        <span>Batal</span>
-                                    </li>
-                                    <li
-                                        className="px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 cursor-pointer"
-                                        onClick={() => handleOtherAction('Tidak Hadir')}
-                                    >
-                                        <FaMapPin />
-                                        <span>Tidak hadir</span>
+                                        <FaTimes />
+                                        <span>Batalkan</span>
                                     </li>
                                 </ul>
                             </div>
@@ -232,7 +271,7 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                             onClick={onConfirmClick}
                             className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-semibold"
                         >
-                            Konfirmasi
+                            Checkout
                         </button>
                     )}
                 </div>

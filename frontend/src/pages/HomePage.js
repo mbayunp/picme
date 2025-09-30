@@ -103,8 +103,7 @@ function TestimonialSection() {
                             key={t.id}
                             onClick={() => setIndex(i)}
                             className={`w-16 h-16 rounded-full overflow-hidden cursor-pointer transition-all duration-300
-                                ${i === index ? "border-4 border-blue-500 scale-110" : "border-2 border-gray-300 opacity-70 hover:opacity-100"}
-                                ${i % 2 === 0 ? "translate-y-0" : "translate-y-4 md:translate-y-6"}`}
+                                ${i === index ? "border-4 border-blue-500 scale-110" : "border-2 border-gray-300 opacity-70 hover:opacity-100"}`}
                         >
                             <img src={t.avatar} alt={t.name} className="w-full h-full object-cover" />
                         </div>
@@ -135,14 +134,14 @@ function HomePage() {
     const [loading, setLoading] = useState(true);
 
     const handleWhatWeDoClick = () => {
-        setShowPicMeLogo(!showPicMeLogo);
+        alert("WHAT WE DO button clicked!");
+        // setShowPicMeLogo(!showPicMeLogo);
     };
 
     useEffect(() => {
         const fetchPosts = async () => {
             try {
                 const response = await axios.get("http://localhost:8080/api/posts");
-                // Ambil 4 postingan terbaru
                 setPosts(response.data.slice(0, 4));
             } catch (error) {
                 console.error("Error fetching posts:", error);
@@ -216,7 +215,7 @@ function HomePage() {
                         <span className="block text-[#b3e6ff]">Smile Today</span>
                     </h1>
                     <p className="text-gray-300 mb-8">
-                      Welcome to a world of joy, passion, and boundless creativity. Together, let's create #ceritahariini  and embark on an extraordinary journey where dreams come true.
+                        Welcome to a world of joy, passion, and boundless creativity. Together, let's create #ceritahariini and embark on an extraordinary journey where dreams come true.
                     </p>
                     <div className="flex gap-4">
                         <Link
@@ -246,10 +245,9 @@ function HomePage() {
                         </h2>
                         <p className="text-gray-700 mb-4 text-justify">
                             Selamat datang di Picme Studio, ruang kreatif untuk menangkap setiap momen berharga dan menyalurkan ide-ide visual dengan cara yang unik. Kami percaya bahwa setiap orang punya cerita, dan melalui lensa kamera serta sentuhan desain, kami membantu mewujudkan cerita itu menjadi karya yang penuh makna.
-
                         </p>
                         <p className="text-gray-700 mb-8 text-justify">
-                            Studio kami dibuat agar seluruh orang merasa nyaman dan ramah, dengan konsep modern yang dipadukan dengan sentuhan kreatif,  setiap sesi foto akan menjadi pengalaman yang sangat  menyenangkan. Tidak hanya sekadar tempat berfoto, Picme Studio  juga menjadi wadah untuk bereksperimen, berkreasi, dan mengekspresikan diri.
+                            Studio kami dibuat agar seluruh orang merasa nyaman dan ramah, dengan konsep modern yang dipadukan dengan sentuhan kreatif, setiap sesi foto akan menjadi pengalaman yang sangat menyenangkan. Tidak hanya sekadar tempat berfoto, Picme Studio juga menjadi wadah untuk bereksperimen, berkreasi, dan mengekspresikan diri.
                         </p>
 
                         {/* Bagian Baru: Foto Kecil dan Kutipan */}
@@ -282,6 +280,8 @@ function HomePage() {
             {/* Unique Ideas */}
             <section className="bg-black text-white py-20 px-12 relative overflow-hidden min-h-screen flex flex-col justify-center">
                 <div className="max-w-7xl mx-auto z-10 relative w-full">
+                    {/* Elemen SVG biru telah dihapus dari sini */}
+                    
                     <div className="absolute top-0 right-0 text-right text-gray-400 text-sm max-w-xs mb-16">
                         Professionals focused on helping your brand grow and move forward.
                     </div>
@@ -305,9 +305,9 @@ function HomePage() {
                         <div className="md:w-1/2 flex justify-center md:justify-end mt-8 md:mt-0">
                             <button
                                 onClick={handleWhatWeDoClick}
-                                className="px-8 py-4 bg-blue-500 text-black rounded-full font-semibold hover:bg-blue-600 transition-colors flex items-center gap-2"
+                                className="px-8 py-4 bg-blue-500 text-white rounded-full font-semibold hover:bg-blue-600 transition-colors flex items-center gap-2"
                             >
-                                WHAT WE DO <span className="ml-2">→</span>
+                                WHAT WE DO <span className="ml-2 text-white">→</span>
                             </button>
                         </div>
                     </div>
@@ -321,33 +321,42 @@ function HomePage() {
                         </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-16 px-4">
-                        <div className="border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-gray-900 bg-opacity-30">
-                            <h3 className="text-xl font-semibold mb-2">
+                        {/* Kartu 1: Branding and Identity Design - Efek aktif dan hover */}
+                        <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
+                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
                                 Branding and <br /> Identity Design
                             </h3>
-                            <div className="flex-grow"></div>
-                            <div className="w-2 h-2 rounded-full bg-gray-500 mt-4"></div>
+                            <p className="text-gray-400 text-sm mt-2 flex-grow">
+                                Our creative agency is a team of professionals focused on helping your brand grow.
+                            </p>
+                            <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
-                        <div className="border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-gray-900 bg-opacity-30">
-                            <h3 className="text-xl font-semibold mb-2">
+
+                        {/* Kartu 2: Website Design and Development - Efek hover */}
+                        <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
+                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
                                 Website Design <br /> and Development
                             </h3>
-                            <div className="flex-grow"></div>
-                            <div className="w-2 h-2 rounded-full bg-gray-500 mt-4"></div>
+                            <p className="text-gray-400 text-sm mt-2 flex-grow"></p>
+                            <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
-                        <div className="border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-gray-900 bg-opacity-30">
-                            <h3 className="text-xl font-semibold mb-2">
+
+                        {/* Kartu 3: Advertising and Marketing Campaigns - Efek hover */}
+                        <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
+                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
                                 Advertising and <br /> Marketing Campaigns
                             </h3>
-                            <div className="flex-grow"></div>
-                            <div className="w-2 h-2 rounded-full bg-gray-500 mt-4"></div>
+                            <p className="text-gray-400 text-sm mt-2 flex-grow"></p>
+                            <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
-                        <div className="border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-gray-900 bg-opacity-30">
-                            <h3 className="text-xl font-semibold mb-2">
+
+                        {/* Kartu 4: Creative Consulting and Development - Efek hover */}
+                        <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
+                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
                                 Creative Consulting <br /> and Development
                             </h3>
-                            <div className="flex-grow"></div>
-                            <div className="w-2 h-2 rounded-full bg-gray-500 mt-4"></div>
+                            <p className="text-gray-400 text-sm mt-2 flex-grow"></p>
+                            <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
                     </div>
                 </div>

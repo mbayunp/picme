@@ -11,8 +11,9 @@ router.post("/", servicesController.create);
 router.put("/:id", verifyToken, servicesController.update);
 router.delete("/:id", verifyToken, servicesController.delete);
 
-// Rute yang benar untuk mengkonfirmasi pemesanan
+// ✅ Rute yang benar untuk mengkonfirmasi dan membatalkan pemesanan
 router.put("/:id/confirm", verifyToken, servicesController.confirmBooking);
+router.put("/:id/cancel", verifyToken, servicesController.cancelBooking);
 
 // Rute untuk Data Pelanggan
 router.get("/customers", verifyToken, servicesController.findAllCustomers);

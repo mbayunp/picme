@@ -1,8 +1,9 @@
+// src/pages/AdminDashboard.jsx
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAdminData from '../hooks/useAdminData';
 import AdminLayout from '../components/AdminLayout';
-// import Modal from '../components/Modal'; // ✅ HAPUS IMPORT YANG HILANG
 import PostsManager from '../components/dashboard/PostsManager';
 import PackagesManager from '../components/dashboard/PackagesManager';
 import BookingsCalendar from '../components/dashboard/BookingsCalendar';
@@ -11,9 +12,7 @@ import CustomersData from '../components/dashboard/CustomersData';
 import PortfolioManager from '../components/dashboard/PortfolioManager';
 import CustomerDetail from '../components/dashboard/CustomerDetail';
 
-// ✅ DEFINISI KOMPONEN MODAL YANG BERFUNGSI (DIPINDAHKAN KE SINI)
 const Modal = ({ title, message, onConfirm, onCancel }) => (
-    // Z-INDEX TERTINGGI (z-50) untuk memastikan modal ini di atas semua yang lain
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
         <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
             <h4 className="text-xl font-bold mb-4">{title}</h4>
@@ -44,7 +43,7 @@ const AdminDashboard = () => {
         handleDelete, showModal, closeModal, fetchPosts, fetchBookings, fetchAllBookings, fetchPackages, fetchCustomers,
         handleSort, renderSortArrow, formatShortDate, getPackageName, portfolioItems, fetchPortfolioItems,
         customerDetail, fetchCustomerDetail,
-        handleConfirmBooking 
+        handleConfirmBooking, handleCancelBooking
     } = useAdminData(activeTab, selectedStudio, selectedCustomer);
 
     const renderContent = () => {
@@ -64,6 +63,7 @@ const AdminDashboard = () => {
                         showModal={showModal}
                         handleDelete={handleDelete}
                         handleConfirmBooking={handleConfirmBooking}
+                        handleCancelBooking={handleCancelBooking}
                     />
                 );
             case "bookings-data":
@@ -73,6 +73,7 @@ const AdminDashboard = () => {
                         handleSort={handleSort} renderSortArrow={renderSortArrow} formatShortDate={formatShortDate} getPackageName={getPackageName}
                         showModal={showModal} fetchAllBookings={fetchAllBookings} handleDelete={handleDelete}
                         handleConfirmBooking={handleConfirmBooking}
+                        handleCancelBooking={handleCancelBooking}
                     />
                 );
             case 'customers':

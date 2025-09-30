@@ -12,12 +12,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware untuk melayani file statis dari folder public di root proyek
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// ✅ Tentukan jalur file statis secara eksplisit
+const staticPath = path.join(__dirname, '..', 'public');
+console.log('Server is serving static files from:', staticPath);
+
+// ✅ Gunakan middleware Express.static
+// Semua file di dalam folder public akan dapat diakses
+app.use(express.static(staticPath));
 
 // Endpoint dasar
 app.get("/", (req, res) => {
-    res.json({ message: "Welcome to the Photo Studio API." });
+    res.json({ message: "Welcome to the Photo Studio API." });
 });
 
 // Import dan gunakan route
@@ -48,5 +53,5 @@ app.post("/api/upload", upload.single('image'), (req, res) => {
 // Jalankan server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}.`);
+    console.log(`Server is running on port ${PORT}.`);
 });

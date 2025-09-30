@@ -35,45 +35,49 @@ function generateTimeSlots(start, end, interval) {
  * GET /services/slots
  */
 exports.getAvailableSlots = (req, res) => {
-  const { date, studio } = req.query;
+    const { date, studio } = req.query;
 
-  if (!date || !studio) {
-    return res.status(400).send({ message: "Tanggal dan studio diperlukan untuk mencari slot." });
-  }
-
-  const query =
-    "SELECT waktu_mulai, waktu_selesai FROM services WHERE tanggal = ? AND studio_name = ?";
-  connection.query(query, [date, studio], (err, bookedSlots) => {
-    if (err) {
-      console.error("❌ Error fetching booked slots:", err.sqlMessage);
-      return res.status(500).send({
-        message: "Terjadi kesalahan saat mengambil data jadwal.",
-        error: err.sqlMessage,
-      });
+    if (!date || !studio) {
+        return res.status(400).send({ message: "Tanggal dan studio diperlukan untuk mencari slot." });
     }
 
-    const pagiSlots = generateTimeSlots("08:00", "11:45", 15);
-    const soreSlots = generateTimeSlots("12:00", "17:45", 15);
+    const query =
+        "SELECT waktu_mulai, waktu_selesai FROM services WHERE tanggal = ? AND studio_name = ?";
+    connection.query(query, [date, studio], (err, bookedSlots) => {
+        if (err) {
+            console.error("❌ Error fetching booked slots:", err.sqlMessage);
+            return res.status(500).send({
+                message: "Terjadi kesalahan saat mengambil data jadwal.",
+                error: err.sqlMessage,
+            });
+        }
 
-    const bookedIntervals = bookedSlots.map((b) => ({
-      start: new Date(`1970-01-01T${b.waktu_mulai}`),
-      end: new Date(`1970-01-01T${b.waktu_selesai}`),
-    }));
+        const bookedIntervals = bookedSlots.map((b) => ({
+            start: moment.utc(`${date} ${b.waktu_mulai}`),
+            end: moment.utc(`${date} ${b.waktu_selesai}`),
+        }));
 
-    const checkAvailability = (slots) =>
-      slots.map((slot) => {
-        const slotTime = new Date(`1970-01-01T${slot.time}`);
-        const isBooked = bookedIntervals.some(
-          (interval) => slotTime >= interval.start && slotTime < interval.end
-        );
-        return { time: slot.time, isAvailable: !isBooked };
-      });
+        const allSlots = generateTimeSlots("08:00", "17:45", 15);
 
-    res.send({
-      pagi: checkAvailability(pagiSlots),
-      sore: checkAvailability(soreSlots),
+        const checkAvailability = (slots) =>
+            slots.map((slot) => {
+                const slotTime = moment.utc(`${date} ${slot.time}`);
+                const slotEnd = moment.utc(slotTime).add(15, 'minutes');
+
+                const isBooked = bookedIntervals.some(interval => {
+                    return (slotTime.isBetween(interval.start, interval.end, null, '[)')) ||
+                           (slotEnd.isBetween(interval.start, interval.end, null, '(]')) ||
+                           (interval.start.isSameOrBefore(slotTime) && interval.end.isSameOrAfter(slotEnd));
+                });
+                
+                return { time: slot.time, isAvailable: !isBooked };
+            });
+
+        const pagiSlots = checkAvailability(allSlots.filter(s => moment(s.time, 'HH:mm').isBefore(moment('12:00', 'HH:mm'))));
+        const soreSlots = checkAvailability(allSlots.filter(s => moment(s.time, 'HH:mm').isSameOrAfter(moment('12:00', 'HH:mm'))));
+
+        res.send({ pagi: pagiSlots, sore: soreSlots });
     });
-  });
 };
 
 /**
@@ -133,128 +137,150 @@ exports.create = (req, res) => {
  * GET /services
  */
 exports.findAll = (req, res) => {
-  const { studio_name, studioId } = req.query;
+    const { studio_name, studioId } = req.query;
 
-  let query = `
-    SELECT 
-      s.*, 
-      p.nama_paket AS package_name 
-    FROM services s 
-    LEFT JOIN packages p ON s.package_id = p.id
-  `;
-  let params = [];
+    let query = `
+        SELECT 
+          s.*, 
+          p.nama_paket AS package_name,
+          p.harga AS package_price,
+          p.image_url AS package_image_url
+        FROM services s 
+        LEFT JOIN packages p ON s.package_id = p.id
+    `;
+    let params = [];
 
-  if (studio_name) {
-    query += " WHERE s.studio_name = ?";
-    params.push(studio_name);
-  }
-  
-  query += " ORDER BY s.tanggal DESC, s.waktu_mulai DESC";
-
-  connection.query(query, params, (err, results) => {
-    if (err) {
-      console.error("❌ Error fetching bookings:", err.sqlMessage);
-      return res.status(500).send({
-        message: "Terjadi kesalahan saat mengambil data pemesanan.",
-        error: err.sqlMessage,
-      });
+    if (studio_name) {
+        query += " WHERE s.studio_name = ?";
+        params.push(studio_name);
     }
-    res.send(results);
-  });
+    
+    query += " ORDER BY s.tanggal DESC, s.waktu_mulai DESC";
+
+    connection.query(query, params, (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching bookings:", err.sqlMessage);
+            return res.status(500).send({
+                message: "Terjadi kesalahan saat mengambil data pemesanan.",
+                error: err.sqlMessage,
+            });
+        }
+        res.send(results);
+    });
 };
 
 /**
  * PUT /services/:id
  */
 exports.update = (req, res) => {
-  const bookingId = req.params.id;
-  const {
-    nama,
-    email,
-    nomor_whatsapp,
-    catatan,
-    tanggal,
-    waktu_mulai,
-    jumlah_orang,
-    studio_name,
-    package_id,
-  } = req.body;
+    const bookingId = req.params.id;
+    const {
+        nama,
+        email,
+        nomor_whatsapp,
+        catatan,
+        tanggal,
+        waktu_mulai,
+        jumlah_orang,
+        studio_name,
+        package_id,
+        status
+    } = req.body;
 
-  const [hour, minute] = waktu_mulai.split(":").map(Number);
-  const startTime = moment().set({hour: hour, minute: minute, second: 0, millisecond: 0});
-  const endTime = moment(startTime).add(15, 'minutes');
+    const [hour, minute] = waktu_mulai.split(":").map(Number);
+    const startTime = moment().set({hour: hour, minute: minute, second: 0, millisecond: 0});
+    const endTime = moment(startTime).add(15, 'minutes');
 
-  const updateBooking = {
-    nama,
-    email: email || null,
-    nomor_whatsapp: nomor_whatsapp || null,
-    catatan: catatan || null,
-    tanggal,
-    waktu_mulai,
-    waktu_selesai: endTime.format('HH:mm'),
-    jumlah_orang: jumlah_orang || 1,
-    studio_name,
-    package_id,
-  };
+    const updateBooking = {
+        nama,
+        email: email || null,
+        nomor_whatsapp: nomor_whatsapp || null,
+        catatan: catatan || null,
+        tanggal,
+        waktu_mulai,
+        waktu_selesai: endTime.format('HH:mm'),
+        jumlah_orang: jumlah_orang || 1,
+        studio_name,
+        package_id,
+        status // ✅ Menambahkan status ke objek update
+    };
 
-  connection.query("UPDATE services SET ? WHERE id = ?", [updateBooking, bookingId], (err, result) => {
-    if (err) {
-      console.error("❌ Error updating booking:", err.sqlMessage);
-      return res.status(500).send({
-        message: `Terjadi kesalahan saat memperbarui pemesanan: ${err.sqlMessage}`,
-        error: err.sqlMessage,
-      });
-    }
-    if (result.affectedRows === 0) {
-      return res.status(404).send({ message: "Pemesanan tidak ditemukan." });
-    }
-    connection.query("SELECT * FROM services WHERE id = ?", [bookingId], (err2, rows) => {
-      if (err2) {
-        return res.status(500).send({ message: "Update berhasil tapi gagal ambil data baru." });
-      }
-      res.send({ ...rows[0], message: "Pemesanan berhasil diperbarui!" });
+    connection.query("UPDATE services SET ? WHERE id = ?", [updateBooking, bookingId], (err, result) => {
+        if (err) {
+            console.error("❌ Error updating booking:", err.sqlMessage);
+            return res.status(500).send({
+                message: `Terjadi kesalahan saat memperbarui pemesanan: ${err.sqlMessage}`,
+                error: err.sqlMessage,
+            });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).send({ message: "Pemesanan tidak ditemukan." });
+        }
+        connection.query("SELECT * FROM services WHERE id = ?", [bookingId], (err2, rows) => {
+            if (err2) {
+                return res.status(500).send({ message: "Update berhasil tapi gagal ambil data baru." });
+            }
+            res.send({ ...rows[0], message: "Pemesanan berhasil diperbarui!" });
+        });
     });
-  });
 };
 
 /**
  * DELETE /services/:id
  */
 exports.delete = (req, res) => {
-  const bookingId = req.params.id;
-  const query = "DELETE FROM services WHERE id = ?";
+    const bookingId = req.params.id;
+    const query = "DELETE FROM services WHERE id = ?";
 
-  connection.query(query, [bookingId], (err, results) => {
-    if (err) {
-      console.error("❌ Error deleting booking:", err.sqlMessage);
-      return res.status(500).send({
-        message: "Terjadi kesalahan saat menghapus pemesanan.",
-        error: err.sqlMessage,
-      });
-    }
-    if (results.affectedRows === 0) {
-      return res.status(404).send({ message: "Pemesanan tidak ditemukan." });
-    }
-    res.send({ message: "Pemesanan berhasil dihapus." });
-  });
+    connection.query(query, [bookingId], (err, results) => {
+        if (err) {
+            console.error("❌ Error deleting booking:", err.sqlMessage);
+            return res.status(500).send({
+                message: "Terjadi kesalahan saat menghapus pemesanan.",
+                error: err.sqlMessage,
+            });
+        }
+        if (results.affectedRows === 0) {
+            return res.status(404).send({ message: "Pemesanan tidak ditemukan." });
+        }
+        res.send({ message: "Pemesanan berhasil dihapus." });
+    });
 };
 
 // Fungsi baru untuk mengkonfirmasi pemesanan
 exports.confirmBooking = (req, res) => {
-  const bookingId = req.params.id;
-  const updateStatus = { status: 'confirmed' };
-  const query = "UPDATE services SET ? WHERE id = ?";
+    const bookingId = req.params.id;
+    const updateStatus = { status: 'confirmed' };
+    const query = "UPDATE services SET ? WHERE id = ?";
 
-  connection.query(query, [updateStatus, bookingId], (err, result) => {
-    if (err) {
-      console.error("❌ Error confirming booking:", err.sqlMessage);
-      return res.status(500).send({ message: `Gagal mengkonfirmasi pemesanan: ${err.sqlMessage}` });
-    }
-    if (result.affectedRows === 0) {
-      return res.status(404).send({ message: "Pemesanan tidak ditemukan." });
-    }
-    res.send({ message: "Pemesanan berhasil dikonfirmasi." });
-  });
+    connection.query(query, [updateStatus, bookingId], (err, result) => {
+        if (err) {
+            console.error("❌ Error confirming booking:", err.sqlMessage);
+            return res.status(500).send({ message: `Gagal mengkonfirmasi pemesanan: ${err.sqlMessage}` });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).send({ message: "Pemesanan tidak ditemukan." });
+        }
+        res.send({ message: "Pemesanan berhasil dikonfirmasi." });
+    });
+};
+
+// Fungsi untuk membatalkan pemesanan
+exports.cancelBooking = (req, res) => {
+    const bookingId = req.params.id;
+    const updateStatus = { status: 'canceled' };
+    const query = "UPDATE services SET ? WHERE id = ?";
+
+    connection.query(query, [updateStatus, bookingId], (err, result) => {
+        if (err) {
+            console.error("❌ Error canceling booking:", err.sqlMessage);
+            return res.status(500).send({ message: `Gagal membatalkan pemesanan: ${err.sqlMessage}` });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).send({ message: "Pemesanan tidak ditemukan." });
+        }
+        res.send({ message: "Pemesanan berhasil dibatalkan." });
+    });
 };
 
 

@@ -1,3 +1,5 @@
+// src/components/dashboard/BookingsCalendar.jsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
@@ -10,7 +12,7 @@ import BookingDetailModal from './BookingDetailModal';
 moment.locale('id');
 const localizer = momentLocalizer(moment);
 
-const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio, packages, showModal, handleConfirmBooking }) => {
+const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio, packages, showModal, handleConfirmBooking, handleCancelBooking }) => {
     const [events, setEvents] = useState([]);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [showEventModal, setShowEventModal] = useState(false);
@@ -62,13 +64,13 @@ const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio
     };
 
     const eventStyleGetter = (event) => {
-        let backgroundColor = '#3174ad';
+        let backgroundColor = '#3174ad'; // Default color
         if (event.resource.status === 'confirmed') {
-            backgroundColor = '#4CAF50';
+            backgroundColor = '#4CAF50'; // Green
         } else if (event.resource.status === 'pending') {
-            backgroundColor = '#FFC107';
+            backgroundColor = '#FFC107'; // Yellow
         } else if (event.resource.status === 'canceled') {
-            backgroundColor = '#F44336';
+            backgroundColor = '#F44336'; // ✅ Merah untuk status dibatalkan
         }
 
         const style = {
@@ -145,6 +147,7 @@ const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio
                         selectedEvent={selectedEvent}
                         onClose={handleCloseEventModal}
                         handleConfirmBooking={handleConfirmBooking}
+                        handleCancelBooking={handleCancelBooking}
                         showModal={showModal} 
                     />
                 </div>

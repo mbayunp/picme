@@ -31,9 +31,9 @@ const Step1_SelectPackage = ({ selectedStudio, groupedPackages, loadingPackages,
               >
                 {groupedPackages[categoryName][0]?.image_url && (
                   <img
-                    src={`http://localhost:8080/assets/images/${groupedPackages[categoryName][0]?.image_url}`}
-                    alt={categoryName}
-                    className="w-24 h-24 object-cover rounded-lg"
+                  src={`http://localhost:8080/${groupedPackages[categoryName][0]?.image_url}`}
+                  alt={categoryName}
+                  className="w-24 h-24 object-cover rounded-lg"
                   />
                 )}
                 <div className="flex-grow flex flex-col justify-center">

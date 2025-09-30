@@ -38,7 +38,8 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
         } else {
             const oldPackage = packages.find(p => p.id === currentPackageId);
             if (oldPackage) {
-                setPreviewUrl(`http://localhost:8080/assets/images/${oldPackage.image_url}`);
+                // ✅ PERBAIKI: Hapus duplikasi path dari sini juga
+                setPreviewUrl(`http://localhost:8080/${oldPackage.image_url}`);
             } else {
                 setPreviewUrl('');
             }
@@ -49,40 +50,60 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
         e.preventDefault();
         try {
             const token = localStorage.getItem('admin-token');
-            const formData = new FormData();
-            formData.append('nama_paket', newPackage.nama_paket);
-            formData.append('harga', newPackage.harga);
-            formData.append('deskripsi_paket', newPackage.deskripsi_paket);
-            formData.append('studio_name', newPackage.studio_name); // Tambahkan studio_name ke formData
-
+            const finalFormData = new FormData();
+            let imageUrl = null;
+    
             if (imageFile) {
-                formData.append('image', imageFile);
+                const uploadFormData = new FormData();
+                uploadFormData.append('image', imageFile);
+    
+                const uploadConfig = {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        'x-access-token': token
+                    },
+                };
+                const uploadRes = await axios.post('http://localhost:8080/api/upload', uploadFormData, uploadConfig);
+                imageUrl = uploadRes.data.imageUrl;
             }
-
-            const config = {
+    
+            finalFormData.append('nama_paket', newPackage.nama_paket);
+            finalFormData.append('harga', Number(newPackage.harga));
+            finalFormData.append('deskripsi_paket', newPackage.deskripsi_paket);
+            finalFormData.append('studio_name', newPackage.studio_name);
+            
+            if (imageUrl) {
+                finalFormData.append('image_url', imageUrl);
+            } else if (isEditing) {
+                const oldPackage = packages.find(p => p.id === currentPackageId);
+                if (oldPackage?.image_url) {
+                    finalFormData.append('image_url', oldPackage.image_url);
+                }
+            }
+    
+            const packageConfig = {
                 headers: {
-                    'x-access-token': token,
-                    'Content-Type': 'multipart/form-data',
-                },
+                    'x-access-token': token
+                }
             };
-
+    
             if (isEditing) {
-                await axios.put(`http://localhost:8080/api/packages/${currentPackageId}`, formData, config);
+                await axios.put(`http://localhost:8080/api/packages/${currentPackageId}`, finalFormData, packageConfig);
                 showModal('Berhasil', 'Paket berhasil diperbarui!');
             } else {
-                if (!imageFile) {
+                if (!imageUrl) {
                     showModal('Gagal', 'Silakan unggah gambar untuk paket baru.');
                     return;
                 }
-                await axios.post('http://localhost:8080/api/packages', formData, config);
+                await axios.post('http://localhost:8080/api/packages', finalFormData, packageConfig);
                 showModal('Berhasil', 'Paket berhasil ditambahkan!');
             }
-
+    
             resetForm();
             fetchPackages();
         } catch (error) {
             console.error('Error adding/updating package:', error);
-            showModal('Gagal', `Gagal ${isEditing ? 'memperbarui' : 'menambahkan'} paket.`);
+            showModal('Gagal', `Gagal ${isEditing ? 'memperbarui' : 'menambahkan'} paket. Coba periksa semua input.`);
         }
     };
 
@@ -93,11 +114,12 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
             nama_paket: pkg.nama_paket,
             harga: pkg.harga,
             deskripsi_paket: pkg.deskripsi_paket,
-            studio_name: pkg.studio_name // Pastikan studio_name terisi saat edit
+            studio_name: pkg.studio_name
         });
         
-        setPreviewUrl(`http://localhost:8080/assets/images/${pkg.image_url}`);
-        setImageFile(null); 
+        // ✅ PERBAIKI: Hapus duplikasi path dari sini
+        setPreviewUrl(`http://localhost:8080/${pkg.image_url}`);
+        setImageFile(null);
     };
 
     const handleCancelEdit = () => {
@@ -198,7 +220,8 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
                         <div key={pkg.id} className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between">
                             {pkg.image_url && (
                                 <img
-                                    src={`http://localhost:8080/assets/images/${pkg.image_url}`}
+                                    // ✅ PERBAIKI: Hapus duplikasi path di sini
+                                    src={`http://localhost:8080/${pkg.image_url}`}
                                     alt={pkg.nama_paket}
                                     className="w-24 h-24 object-cover rounded-md mr-4"
                                 />
