@@ -9,7 +9,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 // Mendaftarkan komponen Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const FinancialReport = ({ packages }) => {
+const FinancialReport = ({ packages, studios }) => {
     const [rawReportData, setRawReportData] = useState([]);
     const [totalRevenue, setTotalRevenue] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -17,6 +17,7 @@ const FinancialReport = ({ packages }) => {
     
     const [filterMonth, setFilterMonth] = useState(moment().month() + 1);
     const [filterYear, setFilterYear] = useState(moment().year());
+    const [filterStudio, setFilterStudio] = useState(''); 
     const [viewType, setViewType] = useState('daily');
 
     const fetchFinancialData = async () => {
@@ -26,7 +27,14 @@ const FinancialReport = ({ packages }) => {
             const token = localStorage.getItem('admin-token');
             const config = { headers: { 'x-access-token': token } };
             
-            const response = await axios.get('http://localhost:8080/api/services/financial-report', config);
+            const response = await axios.get('http://localhost:8080/api/services/financial-report', { 
+                params: { 
+                    month: filterMonth, 
+                    year: filterYear,
+                    studio_name: filterStudio
+                }, 
+                ...config 
+            });
             
             const data = response.data;
             setRawReportData(data);
@@ -44,7 +52,7 @@ const FinancialReport = ({ packages }) => {
 
     useEffect(() => {
         fetchFinancialData();
-    }, []);
+    }, [filterMonth, filterYear, filterStudio]);
 
     const formatCurrency = (amount) => {
         const numericAmount = parseFloat(amount) || 0;
@@ -61,21 +69,13 @@ const FinancialReport = ({ packages }) => {
     };
 
     const filteredData = useMemo(() => {
-        let data = rawReportData.filter(item => {
-            const itemDate = moment(item.tanggal);
-            return itemDate.month() + 1 === parseInt(filterMonth) && itemDate.year() === parseInt(filterYear);
-        });
-
-        const total = data.reduce((sum, item) => sum + (parseInt(item.package_price, 10) || 0), 0);
-        setTotalRevenue(total);
-
-        return data;
-    }, [rawReportData, filterMonth, filterYear]);
+        return rawReportData;
+    }, [rawReportData]);
 
     const aggregatedChartData = useMemo(() => {
         let revenueData = {};
         
-        filteredData.forEach(item => {
+        (filteredData || []).forEach(item => {
             const price = parseInt(item.package_price, 10) || 0;
             let key;
 
@@ -166,6 +166,16 @@ const FinancialReport = ({ packages }) => {
             <h3 className="text-2xl font-bold mb-4">Rekapan Keuangan</h3>
 
             <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4 mb-4">
+                <select
+                    value={filterStudio}
+                    onChange={(e) => setFilterStudio(e.target.value)}
+                    className="p-2 border rounded-md"
+                >
+                    <option value="">Semua Studio</option>
+                    {(studios || []).map(studio => (
+                        <option key={studio.name} value={studio.name}>{studio.name}</option>
+                    ))}
+                </select>
                 <div className="flex items-center space-x-2">
                     <select
                         value={filterMonth}
@@ -232,6 +242,9 @@ const FinancialReport = ({ packages }) => {
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Nama Paket
                             </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Studio
+                            </th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right">
                                 Harga
                             </th>
@@ -244,12 +257,13 @@ const FinancialReport = ({ packages }) => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatShortDate(item.tanggal)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.nama}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.package_name || "Tanpa Paket"}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.studio_name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(item.package_price)}</td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
+                                <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
                                     Tidak ada data booking dengan status 'selesai' di bulan ini.
                                 </td>
                             </tr>

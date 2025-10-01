@@ -499,41 +499,49 @@ exports.updateCustomer = (req, res) => {
 };
 
 exports.getFinancialReport = (req, res) => {
-    const { month, year } = req.query;
- let query = `
+    const { month, year, studio_name } = req.query;
+
+    let query = `
         SELECT 
             s.id,
             s.tanggal,
             s.nama,
             p.nama_paket AS package_name,
-            p.harga AS package_price
+            p.harga AS package_price,
+            s.studio_name
         FROM services s
         LEFT JOIN packages p ON s.package_id = p.id
         WHERE s.status = 'confirmed'
     `;
-    const params = [];
 
-    if (year && month) {
-        query += ` AND YEAR(s.tanggal) = ? AND MONTH(s.tanggal) = ?`;
-        params.push(year, month);
-    } else if (year) {
-        query += ` AND YEAR(s.tanggal) = ?`;
-        params.push(year);
-    } else if (month) {
-        query += ` AND MONTH(s.tanggal) = ?`;
-        params.push(month);
-    }
+    const params = [];
 
-    query += ` ORDER BY s.tanggal DESC`;
+    if (year && month) {
+        query += ` AND YEAR(s.tanggal) = ? AND MONTH(s.tanggal) = ?`;
+        params.push(year, month);
+    } else if (year) {
+        query += ` AND YEAR(s.tanggal) = ?`;
+        params.push(year);
+    } else if (month) {
+        query += ` AND MONTH(s.tanggal) = ?`;
+        params.push(month);
+    }
+    // ✅ TAMBAHAN: Filter berdasarkan studio
+    if (studio_name) {
+        query += ` AND s.studio_name = ?`;
+        params.push(studio_name);
+    }
 
-    connection.query(query, params, (err, results) => {
-        if (err) {
-            console.error("❌ Error fetching financial report:", err.sqlMessage);
-            return res.status(500).send({
-                message: "Terjadi kesalahan saat mengambil laporan keuangan.",
-                error: err.sqlMessage,
-            });
-        }
-        res.send(results);
-    });
+    query += ` ORDER BY s.tanggal DESC`;
+
+    connection.query(query, params, (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching financial report:", err.sqlMessage);
+            return res.status(500).send({
+                message: "Terjadi kesalahan saat mengambil laporan keuangan.",
+                error: err.sqlMessage,
+            });
+        }
+        res.send(results);
+    });
 };

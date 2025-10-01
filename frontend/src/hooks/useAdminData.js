@@ -81,7 +81,6 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
                 return;
             }
             const res = await axios.get(`${API_URL}/services?studio_name=${encodeURIComponent(studioName)}`, config);
-            // ✅ PERBAIKAN: Memastikan bookings selalu array
             setBookings(res.data.data || []);
         } catch (error) {
             console.error('Error fetching bookings:', error);
@@ -241,28 +240,28 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     }, [bookingPagination.data, sortKey, sortDirection]);
     
     const sortedCustomers = useMemo(() => {
-    if (!customerPagination.data) return [];
-    return [...customerPagination.data].filter(customer => {
-        const matchesSearch = customer.nama?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              customer.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              customer.nomor_whatsapp?.includes(searchQuery);
-        const matchesTag = selectedTag ? customer.tags?.includes(selectedTag) : true;
-        return matchesSearch && matchesTag;
-    })
-    .sort((a, b) => {
-        const aValue = a[sortKey];
-        const bValue = b[sortKey]; 
-        if (aValue === bValue) return 0;
-        let comparison = 0;
-        if (sortKey === 'last_visit_date') {
-            comparison = moment(aValue).diff(moment(bValue));
-        } else {
-            if (aValue > bValue) comparison = 1;
-            if (aValue < bValue) comparison = -1;
-        }
-        return sortDirection === 'asc' ? comparison : -comparison;
-    });
-}, [customerPagination.data, sortKey, sortDirection, searchQuery, selectedTag]);
+        if (!customerPagination.data) return [];
+        return [...customerPagination.data].filter(customer => {
+            const matchesSearch = customer.nama?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                  customer.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                  customer.nomor_whatsapp?.includes(searchQuery);
+            const matchesTag = selectedTag ? customer.tags?.includes(selectedTag) : true;
+            return matchesSearch && matchesTag;
+        })
+        .sort((a, b) => {
+            const aValue = a[sortKey];
+            const bValue = b[sortKey]; 
+            if (aValue === bValue) return 0;
+            let comparison = 0;
+            if (sortKey === 'last_visit_date') {
+                comparison = moment(aValue).diff(moment(bValue));
+            } else {
+                if (aValue > bValue) comparison = 1;
+                if (aValue < bValue) comparison = -1;
+            }
+            return sortDirection === 'asc' ? comparison : -comparison;
+        });
+    }, [customerPagination.data, sortKey, sortDirection, searchQuery, selectedTag]);
     
     useEffect(() => {
         if (!config.headers['x-access-token']) {
@@ -274,7 +273,6 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
             if (activeTab === 'posts') await fetchPosts();
             else if (activeTab === 'packages') await fetchPackages();
             else if (activeTab === 'bookings' && selectedStudio) {
-                // ✅ PERBAIKAN: Memanggil fetchBookings saat tab aktif
                 await fetchPackages();
                 await fetchBookings(selectedStudio);
             }
@@ -339,7 +337,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         customers,
         packages,
         portfolioItems,
-        studios,
+        studios, // ✅ PASTIKAN `studios` dikembalikan
         modalInfo,
         sortKey,
         sortDirection,

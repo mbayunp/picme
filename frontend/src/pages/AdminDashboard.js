@@ -72,19 +72,18 @@ const AdminDashboard = () => {
             case "bookings-data":
                 return (
                     <BookingsData
-                        // ✅ PERBAIKAN: Meneruskan prop yang benar
                         sortedBookings={sortedBookings} 
-                        packages={packages} 
-                        studios={studios} 
-                        sortKey={sortKey} 
-                        sortDirection={sortDirection}
+                        packages={packages} 
+                        studios={studios} 
+                        sortKey={sortKey} 
+                        sortDirection={sortDirection}
                         handleSort={handleSort} 
-                        renderSortArrow={renderSortArrow} 
-                        formatShortDate={formatShortDate} 
-                        getPackageName={getPackageName}
+                        renderSortArrow={renderSortArrow} 
+                        formatShortDate={formatShortDate} 
+                        getPackageName={getPackageName}
                         showModal={showModal} 
-                        fetchAllBookings={fetchAllBookings} 
-                        handleDelete={handleDelete}
+                        fetchAllBookings={fetchAllBookings} 
+                        handleDelete={handleDelete}
                         handleConfirmBooking={handleConfirmBooking}
                         handleCancelBooking={handleCancelBooking}
                         bookingData={bookingData}
@@ -118,7 +117,7 @@ const AdminDashboard = () => {
                     />
                 );
             case 'financial-report':
-                return <FinancialReport packages={packages} />;
+                return <FinancialReport packages={packages} studios={studios} />;
             case 'contact-messages':
                 return <ContactMessages messages={contactMessages} fetchMessages={fetchContactMessages} showModal={showModal} />;
             default:
