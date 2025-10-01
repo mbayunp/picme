@@ -3,12 +3,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
-// ✅ Import locale Indonesia
 import 'moment/locale/id';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import BookingDetailModal from './BookingDetailModal';
 
-// ✅ Atur moment agar menggunakan locale Indonesia
 moment.locale('id');
 const localizer = momentLocalizer(moment);
 
@@ -18,7 +16,8 @@ const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio
     const [showEventModal, setShowEventModal] = useState(false);
 
     useEffect(() => {
-        if (!bookings || bookings.length === 0) {
+        // ✅ PERBAIKAN: Periksa apakah 'bookings' adalah array sebelum memetakan
+        if (!Array.isArray(bookings) || bookings.length === 0) {
             setEvents([]);
             return;
         }
@@ -64,13 +63,13 @@ const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio
     };
 
     const eventStyleGetter = (event) => {
-        let backgroundColor = '#3174ad'; // Default color
+        let backgroundColor = '#3174ad';
         if (event.resource.status === 'confirmed') {
-            backgroundColor = '#4CAF50'; // Green
+            backgroundColor = '#4CAF50';
         } else if (event.resource.status === 'pending') {
-            backgroundColor = '#FFC107'; // Yellow
+            backgroundColor = '#FFC107';
         } else if (event.resource.status === 'canceled') {
-            backgroundColor = '#F44336'; // ✅ Merah untuk status dibatalkan
+            backgroundColor = '#F44336';
         }
 
         const style = {
@@ -88,12 +87,11 @@ const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio
 
     const currentStudioName = studios.find(s => s.id === selectedStudio)?.name || 'Pilih Studio';
     
-    // ✅ PROPERTI BARU UNTUK MENGATUR FORMAT WAKTU
     const formats = {
-        timeGutterFormat: 'HH:mm', // Format 24 jam untuk sumbu waktu
-        agendaTimeFormat: 'HH:mm', // Format 24 jam untuk tampilan agenda
-        dayFormat: 'dddd, MMMM D', // Format tanggal hari
-        weekdayFormat: 'dddd',      // Format nama hari
+        timeGutterFormat: 'HH:mm',
+        agendaTimeFormat: 'HH:mm',
+        dayFormat: 'dddd, MMMM D',
+        weekdayFormat: 'dddd',
     };
 
     return (

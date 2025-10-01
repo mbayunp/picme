@@ -5,20 +5,26 @@ import { useNavigate } from 'react-router-dom';
 function AdminLoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    // ✅ Tambahkan state untuk pesan error
+    const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        setErrorMessage(''); // Bersihkan pesan error sebelumnya
         try {
-            // Perbaiki URL endpoint agar sesuai dengan backend
             const response = await axios.post('http://localhost:8080/api/auth/login', { username, password });
             const token = response.data.token;
             localStorage.setItem('admin-token', token);
             navigate('/admin');
         } catch (error) {
-            // Mengganti alert dengan cara yang lebih ramah pengguna
-            // Anda bisa menggunakan state untuk menampilkan pesan error di UI
             console.error('Login error:', error);
+            // ✅ Tampilkan pesan error jika login gagal
+            if (error.response && error.response.status === 401) {
+                setErrorMessage('Username atau password salah.');
+            } else {
+                setErrorMessage('Terjadi kesalahan. Silakan coba lagi.');
+            }
         }
     };
 
@@ -36,6 +42,12 @@ function AdminLoginPage() {
             <div className="bg-white p-10 rounded-xl shadow-2xl w-full max-w-sm">
                 <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">Admin Login</h2>
                 <form onSubmit={handleLogin} className="flex flex-col space-y-5">
+                    {/* ✅ Tampilkan pesan error secara kondisional */}
+                    {errorMessage && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative text-sm">
+                            {errorMessage}
+                        </div>
+                    )}
                     <input
                         type="text"
                         placeholder="Username"
@@ -59,9 +71,6 @@ function AdminLoginPage() {
                         Login
                     </button>
                 </form>
-                <p className="text-center mt-6 text-sm text-gray-600">
-                    Belum punya akun? <a href="/admin/register" className="text-blue-600 hover:underline font-medium">Daftar di sini</a>
-                </p>
             </div>
         </div>
     );

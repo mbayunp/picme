@@ -6,7 +6,8 @@ import moment from 'moment';
 import BookingDetailModal from './BookingDetailModal';
 
 const BookingsData = ({
-    bookings,
+    // ✅ PERBAIKAN: Mengganti nama prop bookings menjadi sortedBookings
+    sortedBookings,
     packages,
     studios,
     sortKey,
@@ -20,6 +21,10 @@ const BookingsData = ({
     handleDelete,
     handleConfirmBooking,
     handleCancelBooking,
+    bookingData,
+    currentPage,
+    totalPages,
+    setPage
 }) => {
     const [isEditingBooking, setIsEditingBooking] = useState(false);
     const [currentBooking, setCurrentBooking] = useState(null);
@@ -137,19 +142,76 @@ const BookingsData = ({
         }
     };
 
-    const dataToDisplay = [...bookings].sort((a, b) => {
-        const aValue = a[sortKey];
-        const bValue = b[sortKey];
-        if (aValue === bValue) return 0;
-        let comparison = 0;
-        if (sortKey === 'tanggal') {
-            comparison = moment(aValue).diff(moment(bValue));
-        } else {
-            if (aValue > bValue) comparison = 1;
-            if (aValue < bValue) comparison = -1;
+    // ✅ PERBAIKAN: Gunakan sortedBookings sebagai sumber data dan tambahkan validasi
+    const dataToDisplay = sortedBookings || [];
+
+    const renderPagination = () => {
+        const pages = [];
+        const safeTotalPages = totalPages || 1;
+        
+        const startPage = Math.max(1, currentPage - 1);
+        const endPage = Math.min(safeTotalPages, currentPage + 1);
+
+        if (startPage > 1) {
+            pages.push(
+                <button key={1} onClick={() => setPage(1)} className="px-3 py-1 rounded-lg mx-1 text-sm bg-gray-200 text-gray-700">1</button>
+            );
+            if (startPage > 2) {
+                pages.push(<span key="ellipsis-start" className="mx-1">...</span>);
+            }
         }
-        return sortDirection === 'asc' ? comparison : -comparison;
-    });
+        
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(
+                <button
+                    key={i}
+                    onClick={() => setPage(i)}
+                    className={`px-3 py-1 rounded-lg mx-1 text-sm ${currentPage === i ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                >
+                    {i}
+                </button>
+            );
+        }
+
+        if (endPage < safeTotalPages) {
+            if (endPage < safeTotalPages - 1) {
+                pages.push(<span key="ellipsis-end" className="mx-1">...</span>);
+            }
+            pages.push(
+                <button key={safeTotalPages} onClick={() => setPage(safeTotalPages)} className="px-3 py-1 rounded-lg mx-1 text-sm bg-gray-200 text-gray-700">
+                    {safeTotalPages}
+                </button>
+            );
+        }
+        
+        const startItem = (currentPage - 1) * 10 + 1;
+        const endItem = Math.min(currentPage * 10, bookingData.totalItems);
+
+        return (
+            <div className="flex justify-between items-center mt-4">
+                <span className="text-sm text-gray-700">
+                    Menampilkan <span className="font-semibold">{startItem}-{endItem}</span> dari <span className="font-semibold">{bookingData.totalItems}</span> pemesanan
+                </span>
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={() => setPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                    >
+                        Previous
+                    </button>
+                    {pages}
+                    <button
+                        onClick={() => setPage(currentPage + 1)}
+                        disabled={currentPage === safeTotalPages}
+                        className="px-3 py-1 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <>
@@ -193,7 +255,7 @@ const BookingsData = ({
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            handleDelete('services', currentBooking.id, 'Pemesanan berhasil dihapus!', 'Gagal menghapus pemesanan.', fetchAllBookings);
+                                            handleDelete('services', currentBooking.id, 'Pemesanan berhasil dihapus!', 'Gagal menghaapus pemesanan.', fetchAllBookings);
                                             setIsEditingBooking(false);
                                             setCurrentBooking(null);
                                         }}
@@ -250,7 +312,8 @@ const BookingsData = ({
                                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{booking.studio_name}</td>
                                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{formatShortDate(booking.tanggal)}</td>
                                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                                        {booking.waktu_mulai.substring(0, 5)} - {booking.waktu_selesai.substring(0, 5)}
+                                        {booking.waktu_mulai ? booking.waktu_mulai.substring(0, 5) : '-'} - 
+                                        {booking.waktu_selesai ? booking.waktu_selesai.substring(0, 5) : '-'}
                                     </td>
                                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{getPackageName(booking.package_id)}</td>
                                     <td className="px-3 py-2 whitespace-nowrap text-sm">{renderBookingStatus(booking.status)}</td>
@@ -277,6 +340,7 @@ const BookingsData = ({
                         </tbody>
                     </table>
                 </div>
+                {renderPagination()}
             </div>
 
             {selectedEvent && (

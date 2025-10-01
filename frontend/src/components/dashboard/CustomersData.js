@@ -5,15 +5,20 @@ import { FaSearch, FaChevronDown } from 'react-icons/fa';
 import { FaUpload, FaDownload } from 'react-icons/fa6';
 import fileDownload from 'js-file-download';
 
-const CustomersData = ({ customers, sortKey, sortDirection, handleSort, renderSortArrow, showModal, fetchCustomers, onSelectCustomer }) => {
+const CustomersData = ({ 
+    customersData,
+    sortKey, sortDirection, handleSort, renderSortArrow, showModal, 
+    fetchCustomers, onSelectCustomer, currentPage, totalPages, totalItems, 
+    setPage,
+    searchQuery, setSearchQuery, 
+    selectedTag, setSelectedTag
+}) => {
     const [isEditingCustomer, setIsEditingCustomer] = useState(false);
     const [currentCustomer, setCurrentCustomer] = useState(null);
     const [customerForm, setCustomerForm] = useState({
         nama: '', email: '', nomor_whatsapp: '',
     });
     
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedTag, setSelectedTag] = useState(null);
     const [isTagsDropdownOpen, setIsTagsDropdownOpen] = useState(false);
     const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -122,27 +127,77 @@ const CustomersData = ({ customers, sortKey, sortDirection, handleSort, renderSo
         }
     };
 
-    const sortedAndFilteredCustomers = [...customers]
-        .filter(customer => {
-            const matchesSearch = customer.nama?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                  customer.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                  customer.nomor_whatsapp?.includes(searchQuery);
-            const matchesTag = selectedTag ? customer.tags?.includes(selectedTag) : true;
-            return matchesSearch && matchesTag;
-        })
-        .sort((a, b) => {
-            const aValue = a[sortKey];
-            const bValue = b[sortKey];
-            if (aValue === bValue) return 0;
-            let comparison = 0;
-            if (sortKey === 'last_visit_date') {
-                comparison = moment(aValue).diff(moment(bValue));
-            } else {
-                if (aValue > bValue) comparison = 1;
-                if (aValue < bValue) comparison = -1;
+    // ✅ PERBAIKAN: Gunakan sortedCustomers sebagai sumber data utama
+    const customersToDisplay = customersData.data;
+
+    const renderPagination = () => {
+        const pages = [];
+        const safeTotalPages = totalPages || 1;
+        
+        // Tampilkan 2 halaman di sekitar halaman saat ini, ditambah halaman pertama dan terakhir
+        const startPage = Math.max(1, currentPage - 1);
+        const endPage = Math.min(safeTotalPages, currentPage + 1);
+
+        if (startPage > 1) {
+            pages.push(
+                <button key={1} onClick={() => setPage(1)} className="px-3 py-1 rounded-lg mx-1 text-sm bg-gray-200 text-gray-700">1</button>
+            );
+            if (startPage > 2) {
+                pages.push(<span key="ellipsis-start" className="mx-1">...</span>);
             }
-            return sortDirection === 'asc' ? comparison : -comparison;
-        });
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(
+                <button
+                    key={i}
+                    onClick={() => setPage(i)}
+                    className={`px-3 py-1 rounded-lg mx-1 text-sm ${currentPage === i ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                >
+                    {i}
+                </button>
+            );
+        }
+
+        if (endPage < safeTotalPages) {
+            if (endPage < safeTotalPages - 1) {
+                pages.push(<span key="ellipsis-end" className="mx-1">...</span>);
+            }
+            pages.push(
+                <button key={safeTotalPages} onClick={() => setPage(safeTotalPages)} className="px-3 py-1 rounded-lg mx-1 text-sm bg-gray-200 text-gray-700">
+                    {safeTotalPages}
+                </button>
+            );
+        }
+        
+        const startItem = (currentPage - 1) * 10 + 1;
+        const endItem = Math.min(currentPage * 10, totalItems);
+
+        return (
+            <div className="flex justify-between items-center mt-4">
+                <span className="text-sm text-gray-700">
+                    Menampilkan <span className="font-semibold">{startItem}-{endItem}</span> dari <span className="font-semibold">{totalItems}</span> pelanggan
+                </span>
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={() => setPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                    >
+                        Previous
+                    </button>
+                    {pages}
+                    <button
+                        onClick={() => setPage(currentPage + 1)}
+                        disabled={currentPage === safeTotalPages}
+                        className="px-3 py-1 bg-white text-gray-700 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="p-5 bg-gray-100 rounded-lg flex-grow flex flex-col">
@@ -246,8 +301,8 @@ const CustomersData = ({ customers, sortKey, sortDirection, handleSort, renderSo
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {sortedAndFilteredCustomers.map((customer, index) => (
-                            <tr key={index}>
+                        {customersToDisplay.map((customer, index) => (
+                            <tr key={customer.nomor_whatsapp || index}>
                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 flex items-center">
                                     <span className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
                                         <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
@@ -273,6 +328,7 @@ const CustomersData = ({ customers, sortKey, sortDirection, handleSort, renderSo
                     </tbody>
                 </table>
             </div>
+            {renderPagination()}
         </div>
     );
 };

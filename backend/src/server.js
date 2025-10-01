@@ -32,6 +32,8 @@ const postRoutes = require("./routes/post.routes.js");
 const productRoutes = require("./routes/product.routes.js");
 const authRoutes = require("./routes/auth.routes.js");
 const packageRoutes = require("./routes/package.routes.js");
+const contactRoutes = require("./routes/contact.routes.js");
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/services", servicesRoutes);
@@ -39,6 +41,7 @@ app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/packages", packageRoutes);
+app.use("/api/contact", contactRoutes);
 
 // Rute khusus untuk upload gambar, terpisah dari rute portfolio
 app.post("/api/upload", upload.single('image'), (req, res) => {

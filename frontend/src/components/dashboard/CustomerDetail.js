@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { FaUserCircle, FaBook, FaBoxOpen, FaTicketAlt, FaStar, FaChevronDown } from 'react-icons/fa';
-import moment from 'moment';
+import { FaUserCircle, FaBook, FaBoxOpen, FaTicketAlt, FaStar, FaChevronDown } from "react-icons/fa";
+import moment from "moment";
+
+// Helper function untuk memformat angka menjadi format Rupiah
+const formatRupiah = (number) => {
+    if (typeof number !== 'number') return '-';
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+    }).format(number);
+};
 
 function CustomerDetail({ customer, onBack, customerDetailData, fetchCustomerDetail }) {
-    const [activeTab, setActiveTab] = useState('agenda');
+    const [activeTab, setActiveTab] = useState("agenda");
     const [loading, setLoading] = useState(true);
-    
+
     useEffect(() => {
         if (customer) {
             setLoading(true);
@@ -16,16 +25,21 @@ function CustomerDetail({ customer, onBack, customerDetailData, fetchCustomerDet
 
     useEffect(() => {
         if (customerDetailData) {
+            console.log("Customer Detail Data:", customerDetailData);
             setLoading(false);
         }
     }, [customerDetailData]);
 
-    if (loading || !customerDetailData) {
+    if (loading) {
         return <div>Memuat data pelanggan...</div>;
     }
 
+    if (!customerDetailData) {
+        return <div className="text-red-500">Data pelanggan tidak ditemukan</div>;
+    }
+
     const renderContent = () => {
-        if (activeTab === 'agenda') {
+        if (activeTab === "agenda") {
             return (
                 <>
                     {/* Tabel Akan Datang */}
@@ -36,38 +50,41 @@ function CustomerDetail({ customer, onBack, customerDetailData, fetchCustomerDet
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
+                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paket</th>
                                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
-                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
-                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
-                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Studio</th>
                                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catatan</th>
                                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {customerDetailData.upcomingBookings.length > 0 ? (
+                                    {customerDetailData?.upcomingBookings?.length > 0 ? (
                                         customerDetailData.upcomingBookings.map((booking, index) => (
                                             <tr key={index}>
-                                                {/* Kolom data booking */}
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-green-600">
+                                                    {moment(booking.tanggal).format("DD/MM/YYYY")}
+                                                </td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm">{booking.package_name}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm">{booking.nama}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm">{booking.studio_name}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm">{booking.catatan}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm">
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold
+                                                        ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                        {booking.status}
+                                                    </span>
+                                                </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="8" className="text-center py-4 text-gray-500">No Data</td>
+                                            <td colSpan="6" className="text-center py-4 text-gray-500">
+                                                Tidak ada data
+                                            </td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
-                            <div className="py-3 px-4 flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Total 0</span>
-                                <div className="flex space-x-2 items-center">
-                                    <span className="text-gray-500">10/page</span>
-                                    <button className="bg-gray-200 text-gray-800 px-2 py-1 rounded">1</button>
-                                    <span className="text-gray-500">Go to</span>
-                                    <input type="text" className="w-12 px-2 py-1 border rounded" />
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -79,28 +96,29 @@ function CustomerDetail({ customer, onBack, customerDetailData, fetchCustomerDet
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
+                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paket</th>
                                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
-                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff</th>
-                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
-                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Studio</th>
                                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catatan</th>
                                         <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {customerDetailData.pastBookings.length > 0 ? (
+                                    {customerDetailData?.pastBookings?.length > 0 ? (
                                         customerDetailData.pastBookings.map((booking, index) => (
                                             <tr key={index}>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-green-600">{booking.tanggal}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{booking.tipe}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{booking.nama}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{booking.staff}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{booking.lokasi}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{booking.total}</td>
-                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{booking.catatan}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-green-600">
+                                                    {moment(booking.tanggal).format("DD/MM/YYYY")}
+                                                </td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm">{booking.package_name}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm">{booking.nama}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm">{booking.studio_name}</td>
+                                                <td className="px-3 py-2 whitespace-nowrap text-sm">{booking.catatan}</td>
                                                 <td className="px-3 py-2 whitespace-nowrap text-sm">
-                                                    <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold
+                                                        ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                                                        booking.status === 'canceled' ? 'bg-red-100 text-red-700' :
+                                                        'bg-yellow-100 text-yellow-700'}`}>
                                                         {booking.status}
                                                     </span>
                                                 </td>
@@ -108,20 +126,13 @@ function CustomerDetail({ customer, onBack, customerDetailData, fetchCustomerDet
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="8" className="text-center py-4 text-gray-500">No Data</td>
+                                            <td colSpan="6" className="text-center py-4 text-gray-500">
+                                                Tidak ada data
+                                            </td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
-                            <div className="py-3 px-4 flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Total 1</span>
-                                <div className="flex space-x-2 items-center">
-                                    <span className="text-gray-500">10/page</span>
-                                    <button className="bg-green-600 text-white px-2 py-1 rounded">1</button>
-                                    <span className="text-gray-500">Go to</span>
-                                    <input type="text" className="w-12 px-2 py-1 border rounded" />
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </>
@@ -136,7 +147,8 @@ function CustomerDetail({ customer, onBack, customerDetailData, fetchCustomerDet
                 ← Kembali
             </button>
             <h1 className="text-3xl font-bold mb-8">Ubah Data Pelanggan</h1>
-            
+
+            {/* Data Customer */}
             <div className="bg-white p-6 rounded-lg shadow-md border-b-2 border-green-600">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center space-x-4">
@@ -144,7 +156,7 @@ function CustomerDetail({ customer, onBack, customerDetailData, fetchCustomerDet
                             <FaUserCircle className="w-12 h-12 text-gray-500" />
                         </span>
                         <div>
-                            <h3 className="text-2xl font-bold">{customerDetailData.nama}</h3>
+                            <h3 className="text-2xl font-bold">{customerDetailData?.nama || "-"}</h3>
                             <div className="flex space-x-2 mt-2">
                                 <button className="p-2 border rounded-full text-green-600 hover:bg-green-50"><FaBook /></button>
                                 <button className="p-2 border rounded-full text-green-600 hover:bg-green-50"><FaBoxOpen /></button>
@@ -153,47 +165,41 @@ function CustomerDetail({ customer, onBack, customerDetailData, fetchCustomerDet
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                        <button className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
-                            <span>Agenda Baru</span>
-                        </button>
-                        <div className="relative">
-                            <button className="bg-white text-gray-800 px-4 py-2 rounded-lg border flex items-center space-x-2">
-                                <span>Lainnya</span> <FaChevronDown />
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
+                {/* Summary */}
                 <div className="grid grid-cols-2 md:grid-cols-7 gap-4 text-center mt-6 text-gray-600">
-                    <div><p className="font-semibold text-lg">{customerDetailData.summary.totalPenjualan}</p><p className="text-sm">Total Penjualan</p></div>
-                    <div><p className="font-semibold text-lg">{customerDetailData.summary.penggunaanVoucher}</p><p className="text-sm">Penggunaan voucher</p></div>
-                    <div><p className="font-semibold text-lg text-red-500">{customerDetailData.summary.belumBayar}</p><p className="text-sm">Belum bayar</p></div>
-                    <div><p className="font-semibold text-lg">{customerDetailData.summary.totalBooking}</p><p className="text-sm">Total Booking</p></div>
-                    <div><p className="font-semibold text-lg">{customerDetailData.summary.komplit}</p><p className="text-sm">Komplit</p></div>
-                    <div><p className="font-semibold text-lg">{customerDetailData.summary.pembatalan}</p><p className="text-sm">Pembatalan</p></div>
-                    <div><p className="font-semibold text-lg text-red-500">{customerDetailData.summary.tidakHadir}</p><p className="text-sm">Tidak hadir</p></div>
+                    <div>
+                        <p className="font-semibold text-lg">{formatRupiah(customerDetailData?.summary?.totalPenjualan || 0)}</p>
+                        <p className="text-sm">Total Penjualan</p>
+                    </div>
+                    <div><p className="font-semibold text-lg">{customerDetailData?.summary?.penggunaanVoucher || 0}</p><p className="text-sm">Penggunaan voucher</p></div>
+                    <div><p className="font-semibold text-lg text-red-500">{customerDetailData?.summary?.belumBayar || 0}</p><p className="text-sm">Belum bayar</p></div>
+                    <div><p className="font-semibold text-lg">{customerDetailData?.summary?.totalBooking || 0}</p><p className="text-sm">Total Booking</p></div>
+                    <div><p className="font-semibold text-lg">{customerDetailData?.summary?.komplit || 0}</p><p className="text-sm">Komplit</p></div>
+                    <div><p className="font-semibold text-lg">{customerDetailData?.summary?.pembatalan || 0}</p><p className="text-sm">Pembatalan</p></div>
+                    <div><p className="font-semibold text-lg text-red-500">{customerDetailData?.summary?.tidakHadir || 0}</p><p className="text-sm">Tidak hadir</p></div>
                 </div>
             </div>
 
+            {/* Tabs */}
             <div className="mt-8 flex border-b border-gray-200">
-                <button 
-                    onClick={() => setActiveTab('agenda')} 
-                    className={`px-4 py-2 font-medium ${activeTab === 'agenda' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500'}`}
+                <button
+                    onClick={() => setActiveTab("agenda")}
+                    className={`px-4 py-2 font-medium ${activeTab === "agenda" ? "border-b-2 border-green-600 text-green-600" : "text-gray-500"}`}
                 >
                     Agenda
                 </button>
-                <button 
-                    onClick={() => setActiveTab('layanan')} 
-                    className={`px-4 py-2 font-medium ${activeTab === 'layanan' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500'}`}
+                <button
+                    onClick={() => setActiveTab("layanan")}
+                    className={`px-4 py-2 font-medium ${activeTab === "layanan" ? "border-b-2 border-green-600 text-green-600" : "text-gray-500"}`}
                 >
                     Layanan
                 </button>
             </div>
 
-            <div className="mt-4 flex-grow">
-                {renderContent()}
-            </div>
+            {/* Content */}
+            <div className="mt-4 flex-grow">{renderContent()}</div>
         </div>
     );
 }
