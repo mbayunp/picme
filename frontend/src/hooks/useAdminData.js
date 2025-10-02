@@ -5,13 +5,13 @@ import axios from 'axios';
 import moment from 'moment';
 
 const API_URL = "http://localhost:8080/api";
+
 const getTokenConfig = () => {
     const token = localStorage.getItem('admin-token');
     return {
         headers: { 'x-access-token': token }
     };
 };
-
 
 const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     const [posts, setPosts] = useState([]);
@@ -95,7 +95,9 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
                 return;
             }
             const res = await axios.get(`${API_URL}/services?studio_name=${encodeURIComponent(studioName)}`, getTokenConfig());
-            // ✅ PERBAIKAN: Mengambil data array. Jika res.data adalah objek, gunakan res.data.data, jika tidak, gunakan res.data (array langsung).
+            
+            // ✅ PERBAIKAN: Mengambil data array langsung dari respons API
+            // Karena API tanpa pagination mengembalikan array langsung
             const data = Array.isArray(res.data) ? res.data : res.data.data || [];
             setBookings(data);
         } catch (error) {
@@ -110,7 +112,6 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         if (activeTab !== 'bookings-data' || !isAuthenticated) return;
         try {
             const res = await axios.get(`${API_URL}/services?page=${page}&limit=10`, getTokenConfig());
-            // Pastikan API mengembalikan objek ber-pagination di mode ini.
             setBookingPagination(res.data);
             console.log("Booking data with pagination:", res.data);
         } catch (error) {
@@ -288,10 +289,6 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         const fetchData = async () => {
             if (activeTab === 'posts') await fetchPosts();
             else if (activeTab === 'packages') await fetchPackages();
-            else if (activeTab === 'bookings' && selectedStudio) {
-                await fetchPackages();
-                await fetchBookings(selectedStudio);
-            }
             else if (activeTab === 'portfolio') await fetchPortfolioItems();
             else if (activeTab === 'contact-messages') await fetchContactMessages();
             
@@ -315,6 +312,13 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         isAuthenticated
     ]);
 
+    // ✅ NEW EFFECT: Khusus untuk memuat data Kalender (bookings) saat studio/tab berubah
+    useEffect(() => {
+        if (activeTab === 'bookings' && selectedStudio && isAuthenticated) {
+            fetchBookings(selectedStudio);
+        }
+    }, [activeTab, selectedStudio, fetchBookings, isAuthenticated]);
+    
     useEffect(() => {
         if (activeTab === 'customers' && !selectedCustomer && isAuthenticated) {
             fetchCustomers(customerPagination.currentPage, searchQuery);

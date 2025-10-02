@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import moment from "moment";
+import InitialBanner from "../components/InitialBanner"; // ✅ IMPORT KOMPONEN BARU
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 // Komponen baru untuk animasi Liquid Blob
 const LiquidBlobAnimation = () => {
@@ -132,6 +135,9 @@ function HomePage() {
     const [showPicMeLogo, setShowPicMeLogo] = useState(false);
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    // ✅ STATE BARU UNTUK BANNER
+    const [showInitialBanner, setShowInitialBanner] = useState(false);
+    const [bannerData, setBannerData] = useState([]);
 
     const handleWhatWeDoClick = () => {
         alert("WHAT WE DO button clicked!");
@@ -150,7 +156,34 @@ function HomePage() {
             }
         };
         fetchPosts();
+        
+        // ✅ EFFECT BARU: Memuat data banner dan mengecek status penutupan
+        const fetchBanners = async () => {
+            try {
+                const response = await axios.get(`http://localhost:8080/api/announcements`); 
+                const data = response.data || [];
+                setBannerData(data);
+                
+                if (data.length > 0) {
+                    const today = moment().format('YYYY-MM-DD');
+                    const closedDate = localStorage.getItem('bannerClosedDate');
+                    
+                    if (closedDate !== today) {
+                        setShowInitialBanner(true);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching banners:", error);
+            }
+        };
+
+        fetchBanners();
+
     }, []);
+
+    const handleCloseBanner = () => {
+        setShowInitialBanner(false);
+    };
 
     const renderPosts = () => {
         if (loading) {
@@ -206,7 +239,6 @@ function HomePage() {
 
     return (
         <div className="font-rethink-sans">
-            {/* Hero Section dengan Animasi Liquid Blob */}
             <section className="bg-[#0d1a2c] text-white min-h-screen flex items-center px-12 relative overflow-hidden">
                 <LiquidBlobAnimation />
                 <div className="max-w-7xl mx-auto z-10 w-full relative">
@@ -234,7 +266,6 @@ function HomePage() {
                 </div>
             </section>
 
-            {/* Discover Studio */}
             <section className="bg-white py-20 px-12 min-h-screen flex items-center">
                 <div className="grid grid-cols-1 md:grid-cols-2 max-w-7xl mx-auto w-full">
                     <div className="flex flex-col justify-center">
@@ -250,7 +281,6 @@ function HomePage() {
                             Studio kami dibuat agar seluruh orang merasa nyaman dan ramah, dengan konsep modern yang dipadukan dengan sentuhan kreatif, setiap sesi foto akan menjadi pengalaman yang sangat menyenangkan. Tidak hanya sekadar tempat berfoto, Picme Studio juga menjadi wadah untuk bereksperimen, berkreasi, dan mengekspresikan diri.
                         </p>
 
-                        {/* Bagian Baru: Foto Kecil dan Kutipan */}
                         <div className="flex items-center space-x-4 mt-8">
                             <img
                                 src="/images/images1.jpg"
@@ -277,11 +307,8 @@ function HomePage() {
                 </div>
             </section>
 
-            {/* Unique Ideas */}
             <section className="bg-black text-white py-20 px-12 relative overflow-hidden min-h-screen flex flex-col justify-center">
                 <div className="max-w-7xl mx-auto z-10 relative w-full">
-                    {/* Elemen SVG biru telah dihapus dari sini */}
-                    
                     <div className="absolute top-0 right-0 text-right text-gray-400 text-sm max-w-xs mb-16">
                         Professionals focused on helping your brand grow and move forward.
                     </div>
@@ -321,7 +348,6 @@ function HomePage() {
                         </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-16 px-4">
-                        {/* Kartu 1: Branding and Identity Design - Efek aktif dan hover */}
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
                             <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
                                 Branding and <br /> Identity Design
@@ -332,7 +358,6 @@ function HomePage() {
                             <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
 
-                        {/* Kartu 2: Website Design and Development - Efek hover */}
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
                             <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
                                 Website Design <br /> and Development
@@ -341,7 +366,6 @@ function HomePage() {
                             <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
 
-                        {/* Kartu 3: Advertising and Marketing Campaigns - Efek hover */}
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
                             <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
                                 Advertising and <br /> Marketing Campaigns
@@ -350,7 +374,6 @@ function HomePage() {
                             <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
 
-                        {/* Kartu 4: Creative Consulting and Development - Efek hover */}
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
                             <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
                                 Creative Consulting <br /> and Development
@@ -362,10 +385,8 @@ function HomePage() {
                 </div>
             </section>
 
-            {/* Customer Voices */}
             <TestimonialSection />
 
-            {/* Popular Publication */}
             <section className="py-20 px-12 bg-white flex flex-col justify-center">
                 <div className="max-w-7xl mx-auto w-full">
                     <div className="flex justify-between items-center mb-10">
@@ -379,6 +400,13 @@ function HomePage() {
                     {renderPosts()}
                 </div>
             </section>
+            
+            {showInitialBanner && (
+                <InitialBanner
+                    bannerData={bannerData}
+                    onClose={handleCloseBanner}
+                />
+            )}
         </div>
     );
 }

@@ -426,6 +426,28 @@ exports.importCustomers = (req, res) => {
     });
 };
 
+exports.getCustomers = (req, res) => {
+    const { page = 1, limit = 20, search = "" } = req.query;
+    const offset = (page - 1) * limit;
+
+    let query = `
+        SELECT nama, email, nomor_whatsapp, COUNT(*) AS total_pemesanan, MAX(tanggal) AS last_visit
+        FROM services
+        WHERE nama LIKE ?
+        GROUP BY nama, email, nomor_whatsapp
+        ORDER BY last_visit DESC
+        LIMIT ? OFFSET ?
+    `;
+    connection.query(query, [`%${search}%`, parseInt(limit), offset], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send({ error: err.message });
+        }
+        res.send(results);
+    });
+};
+
+
 // Fungsi baru untuk mengambil detail pelanggan berdasarkan nomor WhatsApp
 exports.getCustomerDetails = (req, res) => {
     const { nomor_whatsapp } = req.params;
@@ -663,7 +685,7 @@ exports.mergeSingleCustomer = async (req, res) => {
         }
         const { nama, email } = masterData[0];
         
-        // 2. Normalize SEMUA record duplikat (yang akan dihapus) agar nama dan email konsisten
+        // 2. Normalize SEMUA record duplikat (agar konsisten)
         const allIds = [...duplicateIds, masterId];
         const queryNormalizeDuplicates = `
             UPDATE services
@@ -674,18 +696,25 @@ exports.mergeSingleCustomer = async (req, res) => {
 
         // 3. Hapus record duplikat (selain masterId)
         const queryDeleteDuplicates = `DELETE FROM services WHERE id IN (?)`;
-        const [result] = await connection.promise().query(queryDeleteDuplicates, [duplicateIds]);
+        const [deleteResult] = await connection.promise().query(queryDeleteDuplicates, [duplicateIds]);
 
         await connection.promise().commit();
 
-        res.send({ message: `Pelanggan berhasil digabungkan. ${result.affectedRows} entri duplikat dihapus.` });
+        res.send({
+            message: `Pelanggan berhasil digabungkan. ${deleteResult.affectedRows} record duplikat dihapus.`,
+            masterId,
+            normalizedName: nama,
+            normalizedEmail: email,
+            deletedIds: duplicateIds
+        });
 
     } catch (err) {
         await connection.promise().rollback();
         console.error("❌ Error merging single customer:", err.sqlMessage || err);
-        res.status(500).send({ message: "Terjadi kesalahan saat menggabungkan data.", error: err.sqlMessage || err });
+        res.status(500).send({ message: "Terjadi kesalahan saat menggabungkan pelanggan.", error: err.sqlMessage || err });
     }
 };
+
 
 exports.getFinancialReport = (req, res) => {
     const { month, year, studio_name } = req.query;

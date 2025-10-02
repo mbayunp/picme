@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaSignOutAlt, FaTachometerAlt, FaCalendarAlt, FaUsers, FaImage, FaCameraRetro, FaChartLine, FaEnvelope } from 'react-icons/fa';
+import { FaSignOutAlt, FaTachometerAlt, FaCalendarAlt, FaUsers, FaImage, FaCameraRetro, FaChartLine, FaEnvelope, FaBullhorn } from 'react-icons/fa'; // ✅ IMPORT BARU
 
 const AdminLayout = ({ activeTab, setActiveTab, children }) => {
     return (
@@ -31,7 +31,6 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaTachometerAlt className="mr-3" /> Data Booking
                                 </button>
                             </li>
-                            {/* ... menu lainnya */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('customers')}
@@ -40,7 +39,15 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaUsers className="mr-3" /> Data Pelanggan
                                 </button>
                             </li>
-                            {/* ✅ Menu baru untuk Pesan Kontak */}
+                            {/* ✅ MENU PENGUMUMAN BARU */}
+                            <li className="mb-2">
+                                <button
+                                    onClick={() => setActiveTab('announcements')}
+                                    className={`w-full text-left flex items-center p-3 rounded-lg transition-colors duration-200 ${activeTab === 'announcements' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'}`}
+                                >
+                                    <FaBullhorn className="mr-3" /> Pengumuman
+                                </button>
+                            </li>
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('contact-messages')}
@@ -49,7 +56,6 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaEnvelope className="mr-3" /> Pesan Masuk
                                 </button>
                             </li>
-                            {/* ... menu lainnya */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('posts')}

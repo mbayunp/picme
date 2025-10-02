@@ -1,26 +1,30 @@
-// src/middleware/multer.middleware.js
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 
-const multer = require('multer');
-const path = require('path');
-
-// Konfigurasi penyimpanan file di disk
-const storage = multer.diskStorage({
+// ✅ PERBAIKAN: Pisahkan storage untuk pengumuman
+const announcementStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // Jalur yang benar ke folder tujuan
-    cb(null, path.join(__dirname, '../../public/assets/images'));
+    const uploadPath = path.join(__dirname, "..", "..", "public", "assets", "images", "pengumuman");
+    // Pastikan direktori ada, jika tidak, buat
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
-    // Buat nama file unik untuk gambar yang diunggah
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const fileExtension = path.extname(file.originalname);
-    cb(null, uniqueSuffix + fileExtension);
-  }
+    cb(null, Date.now() + "-" + file.originalname);
+  },
 });
 
-// Buat instance upload Multer
-const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 } // Batas ukuran file 5MB
+const defaultStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "..", "..", "public", "assets", "images"));
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
 });
 
-module.exports = { upload };
+exports.upload = multer({ storage: defaultStorage });
+exports.uploadAnnouncement = multer({ storage: announcementStorage });
