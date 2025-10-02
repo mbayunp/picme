@@ -35,7 +35,7 @@ const Modal = ({ title, message, onConfirm, onCancel }) => (
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('bookings');
+    const [activeTab, setActiveTab] = useState('customers'); // ✅ PERBAIKAN: set default ke 'customers'
     const [selectedStudio, setSelectedStudio] = useState('1'); 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
 
@@ -46,7 +46,10 @@ const AdminDashboard = () => {
         customerDetail, fetchCustomerDetail,
         handleConfirmBooking, handleCancelBooking, contactMessages, fetchContactMessages,
         customersData, currentPage, totalPages, totalItems, setPage,
-        bookingData, bookingCurrentPage, bookingTotalPages, setBookingPage
+        bookingData, bookingCurrentPage, bookingTotalPages, setBookingPage,
+        duplicateRecords,
+        fetchDuplicateRecords,
+        mergeCustomer,
     } = useAdminData(activeTab, selectedStudio, selectedCustomer);
 
     const renderContent = () => {
@@ -93,20 +96,15 @@ const AdminDashboard = () => {
                     />
                 );
             case 'customers':
-                if (selectedCustomer) {
-                    return <CustomerDetail
-                                customer={selectedCustomer}
-                                onBack={() => setSelectedCustomer(null)}
-                                customerDetailData={customerDetail}
-                                fetchCustomerDetail={fetchCustomerDetail}
-                            />;
-                }
                 return (
                     <CustomersData
                         customersData={customersData} sortKey={sortKey} sortDirection={sortDirection}
                         handleSort={handleSort} renderSortArrow={renderSortArrow} showModal={showModal}
                         fetchCustomers={fetchCustomers} onSelectCustomer={setSelectedCustomer}
                         currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} setPage={setPage}
+                        duplicateRecords={duplicateRecords}
+                        fetchDuplicateRecords={fetchDuplicateRecords}
+                        mergeCustomer={mergeCustomer}
                     />
                 );
             case 'portfolio':

@@ -5,6 +5,13 @@ import axios from 'axios';
 import moment from 'moment';
 
 const API_URL = "http://localhost:8080/api";
+const getTokenConfig = () => {
+    const token = localStorage.getItem('admin-token');
+    return {
+        headers: { 'x-access-token': token }
+    };
+};
+
 
 const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     const [posts, setPosts] = useState([]);
@@ -37,13 +44,8 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     });
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTag, setSelectedTag] = useState(null);
-
-    const config = useMemo(() => {
-        const token = localStorage.getItem('admin-token');
-        return {
-            headers: { 'x-access-token': token }
-        };
-    }, []);
+    const [duplicateRecords, setDuplicateRecords] = useState([]);
+    const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('admin-token'));
 
     const showModal = useCallback((title, message, action = null) => {
         setModalInfo({ show: true, title, message, action });
@@ -53,102 +55,121 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         setModalInfo({ show: false, title: '', message: '', action: null });
     }, []);
 
+    useEffect(() => {
+        const checkAuth = () => {
+            setIsAuthenticated(!!localStorage.getItem('admin-token'));
+        };
+        window.addEventListener('storage', checkAuth); 
+        return () => window.removeEventListener('storage', checkAuth);
+    }, []);
+
+
     const fetchPosts = useCallback(async () => {
+        if (!isAuthenticated) return;
         try {
-            const res = await axios.get(`${API_URL}/posts`, config);
+            const res = await axios.get(`${API_URL}/posts`, getTokenConfig());
             setPosts(res.data);
         } catch (error) {
             console.error("Error fetching posts:", error);
             showModal('Error', 'Gagal memuat data postingan.');
         }
-    }, [showModal, config]);
+    }, [showModal, isAuthenticated]);
 
     const fetchPackages = useCallback(async () => {
+        if (!isAuthenticated) return;
         try {
-            const res = await axios.get(`${API_URL}/packages`, config);
+            const res = await axios.get(`${API_URL}/packages`, getTokenConfig());
             setPackages(res.data);
         } catch (error) {
             console.error("Error fetching packages:", error);
             showModal('Error', 'Gagal memuat data paket.');
         }
-    }, [showModal, config]);
+    }, [showModal, isAuthenticated]);
 
     const fetchBookings = useCallback(async (studioId) => {
+        if (!isAuthenticated) return;
         try {
             const studioName = studios.find(s => s.id === studioId)?.name;
             if (!studioName) {
                 setBookings([]);
                 return;
             }
-            const res = await axios.get(`${API_URL}/services?studio_name=${encodeURIComponent(studioName)}`, config);
-            setBookings(res.data.data || []);
+            const res = await axios.get(`${API_URL}/services?studio_name=${encodeURIComponent(studioName)}`, getTokenConfig());
+            // ✅ PERBAIKAN: Mengambil data array. Jika res.data adalah objek, gunakan res.data.data, jika tidak, gunakan res.data (array langsung).
+            const data = Array.isArray(res.data) ? res.data : res.data.data || [];
+            setBookings(data);
         } catch (error) {
             console.error('Error fetching bookings:', error);
             if (error.response && error.response.status === 401) {
                 showModal('Unauthorized', 'Sesi Anda telah berakhir atau token tidak valid. Silakan login kembali.');
             }
         }
-    }, [studios, showModal, config]);
+    }, [studios, showModal, isAuthenticated]);
 
     const fetchAllBookings = useCallback(async (page = 1) => {
-        if (activeTab !== 'bookings-data') return;
+        if (activeTab !== 'bookings-data' || !isAuthenticated) return;
         try {
-            const res = await axios.get(`${API_URL}/services?page=${page}&limit=10`, config);
+            const res = await axios.get(`${API_URL}/services?page=${page}&limit=10`, getTokenConfig());
+            // Pastikan API mengembalikan objek ber-pagination di mode ini.
             setBookingPagination(res.data);
             console.log("Booking data with pagination:", res.data);
         } catch (error) {
             console.error('Error fetching all bookings:', error);
             showModal('Gagal', 'Gagal memuat data detail pemesanan.');
         }
-    }, [activeTab, showModal, config]);
+    }, [activeTab, showModal, isAuthenticated]);
 
-    const fetchCustomers = useCallback(async (page = 1) => {
-        if (activeTab !== 'customers') return;
+    const fetchCustomers = useCallback(async (page = 1, search = '') => {
+        if (activeTab !== 'customers' || !isAuthenticated) return;
         try {
-            const res = await axios.get(`${API_URL}/services/customers?page=${page}&limit=10`, config);
+            const res = await axios.get(`${API_URL}/services/customers?page=${page}&limit=10&search=${encodeURIComponent(search)}`, getTokenConfig());
             setCustomerPagination(res.data);
             console.log("Customer data with pagination:", res.data);
         } catch (error) {
             console.error('Error fetching customers:', error);
             showModal('Gagal', 'Gagal memuat data pelanggan.');
         }
-    }, [activeTab, showModal, config]);
+    }, [activeTab, showModal, isAuthenticated]);
 
     const fetchPortfolioItems = useCallback(async () => {
+        if (!isAuthenticated) return;
         try {
-            const res = await axios.get(`${API_URL}/portfolio`, config);
+            const res = await axios.get(`${API_URL}/portfolio`, getTokenConfig());
             setPortfolioItems(res.data);
         } catch (error) {
             console.error('Error fetching portfolio items:', error);
             showModal('Gagal', 'Gagal memuat data portfolio.');
         }
-    }, [showModal, config]);
+    }, [showModal, isAuthenticated]);
 
     const fetchCustomerDetail = useCallback(async (nomor_whatsapp) => {
+        if (!isAuthenticated) return;
         try {
-            const res = await axios.get(`${API_URL}/services/customer/${nomor_whatsapp}`, config);
+            const res = await axios.get(`${API_URL}/services/customer/${nomor_whatsapp}`, getTokenConfig());
             setCustomerDetail(res.data);
             console.log("Customer Detail fetched:", res.data);
         } catch (error) {
             console.error('Error fetching customer detail:', error);
             setCustomerDetail(null);
         }
-    }, [config]);
+    }, [isAuthenticated]);
 
     const fetchContactMessages = useCallback(async () => {
+        if (!isAuthenticated) return;
         try {
-            const res = await axios.get(`${API_URL}/contact`, config);
+            const res = await axios.get(`${API_URL}/contact`, getTokenConfig());
             setContactMessages(res.data);
         } catch (error) {
             console.error('Error fetching contact messages:', error);
             showModal('Gagal', 'Gagal memuat pesan kontak.');
         }
-    }, [showModal, config]);
+    }, [showModal, isAuthenticated]);
 
     const handleConfirmBooking = useCallback(async (id, onClose) => {
+        if (!isAuthenticated) return showModal('Error', 'Anda harus login untuk melakukan aksi ini.');
         showModal('Konfirmasi Checkout', 'Apakah Anda yakin ingin mengkonfirmasi dan melakukan checkout pemesanan ini?', async () => {
             try {
-                await axios.put(`${API_URL}/services/${id}/confirm`, {}, config); 
+                await axios.put(`${API_URL}/services/${id}/confirm`, {}, getTokenConfig()); 
                 showModal('Berhasil', 'Pemesanan berhasil dikonfirmasi dan checkout!');
                 if (onClose) onClose();
                 fetchAllBookings();
@@ -163,12 +184,13 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
                 showModal('Gagal', errorMessage);
             }
         });
-    }, [showModal, fetchAllBookings, config]);
+    }, [showModal, fetchAllBookings, isAuthenticated]);
 
     const handleDelete = useCallback(async (endpoint, id, successMessage, failureMessage, refetchFunction) => {
+        if (!isAuthenticated) return showModal('Error', 'Anda harus login untuk melakukan aksi ini.');
         showModal('Konfirmasi', `Apakah Anda yakin ingin menghapus data ini?`, async () => {
             try {
-                await axios.delete(`${API_URL}/${endpoint}/${id}`, config);
+                await axios.delete(`${API_URL}/${endpoint}/${id}`, getTokenConfig());
                 showModal('Berhasil', successMessage);
                 refetchFunction();
             } catch (error) {
@@ -176,11 +198,12 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
                 showModal('Gagal', failureMessage);
             }
         });
-    }, [showModal, config]);
+    }, [showModal, isAuthenticated]);
     
     const handleCancelBooking = useCallback(async (id) => {
+        if (!isAuthenticated) return showModal('Error', 'Anda harus login untuk melakukan aksi ini.');
         try {
-            await axios.put(`${API_URL}/services/${id}/cancel`, {}, config);
+            await axios.put(`${API_URL}/services/${id}/cancel`, {}, getTokenConfig());
             showModal('Berhasil', 'Pemesanan berhasil dibatalkan!');
             if (activeTab === 'bookings') {
                 fetchBookings(selectedStudio);
@@ -191,7 +214,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
             console.error('Error canceling booking:', error);
             showModal('Gagal', 'Gagal membatalkan pemesanan.');
         }
-    }, [config, showModal, activeTab, fetchAllBookings, fetchBookings, selectedStudio]);
+    }, [showModal, activeTab, fetchAllBookings, fetchBookings, selectedStudio, isAuthenticated]);
     
     const handleSort = useCallback((key) => {
         if (sortKey === key) {
@@ -241,16 +264,9 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     
     const sortedCustomers = useMemo(() => {
         if (!customerPagination.data) return [];
-        return [...customerPagination.data].filter(customer => {
-            const matchesSearch = customer.nama?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                  customer.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                  customer.nomor_whatsapp?.includes(searchQuery);
-            const matchesTag = selectedTag ? customer.tags?.includes(selectedTag) : true;
-            return matchesSearch && matchesTag;
-        })
-        .sort((a, b) => {
+        return [...customerPagination.data].sort((a, b) => {
             const aValue = a[sortKey];
-            const bValue = b[sortKey]; 
+            const bValue = b[sortKey];
             if (aValue === bValue) return 0;
             let comparison = 0;
             if (sortKey === 'last_visit_date') {
@@ -264,7 +280,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     }, [customerPagination.data, sortKey, sortDirection, searchQuery, selectedTag]);
     
     useEffect(() => {
-        if (!config.headers['x-access-token']) {
+        if (!isAuthenticated) {
             setCustomerDetail(null);
             return;
         }
@@ -275,12 +291,6 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
             else if (activeTab === 'bookings' && selectedStudio) {
                 await fetchPackages();
                 await fetchBookings(selectedStudio);
-            }
-            else if (activeTab === 'bookings-data') {
-                // Biarkan useEffect di bawah yang memuat
-            }
-            else if (activeTab === 'customers') {
-                // Biarkan useEffect di bawah yang memuat
             }
             else if (activeTab === 'portfolio') await fetchPortfolioItems();
             else if (activeTab === 'contact-messages') await fetchContactMessages();
@@ -296,34 +306,32 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         activeTab,
         selectedStudio,
         selectedCustomer,
-        config,
         fetchPosts,
         fetchPackages,
         fetchBookings,
-        fetchAllBookings,
-        fetchCustomers,
         fetchPortfolioItems,
         fetchContactMessages,
-        fetchCustomerDetail
+        fetchCustomerDetail,
+        isAuthenticated
     ]);
 
     useEffect(() => {
-        if (activeTab === 'customers' && !selectedCustomer) {
-            fetchCustomers(customerPagination.currentPage);
+        if (activeTab === 'customers' && !selectedCustomer && isAuthenticated) {
+            fetchCustomers(customerPagination.currentPage, searchQuery);
         }
-    }, [activeTab, selectedCustomer, fetchCustomers, customerPagination.currentPage]);
+    }, [activeTab, selectedCustomer, fetchCustomers, customerPagination.currentPage, searchQuery, isAuthenticated]);
     
     useEffect(() => {
-        if (activeTab === 'bookings-data') {
+        if (activeTab === 'bookings-data' && isAuthenticated) {
             fetchAllBookings(bookingPagination.currentPage);
         }
-    }, [activeTab, fetchAllBookings, bookingPagination.currentPage]);
+    }, [activeTab, fetchAllBookings, bookingPagination.currentPage, isAuthenticated]);
 
     const setCustomerPage = useCallback((page) => {
         if (page > 0 && page <= customerPagination.totalPages) {
-            fetchCustomers(page);
+            fetchCustomers(page, searchQuery);
         }
-    }, [fetchCustomers, customerPagination.totalPages]);
+    }, [fetchCustomers, customerPagination.totalPages, searchQuery]);
 
     const setBookingPage = useCallback((page) => {
         if (page > 0 && page <= bookingPagination.totalPages) {
@@ -331,13 +339,37 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         }
     }, [fetchAllBookings, bookingPagination.totalPages]);
 
+    const fetchDuplicateRecords = useCallback(async (nomor_whatsapp) => {
+        if (!isAuthenticated) return;
+        try {
+            const res = await axios.get(`${API_URL}/services/customers/duplicates/${nomor_whatsapp}`, getTokenConfig());
+            setDuplicateRecords(res.data);
+        } catch (error) {
+            console.error('Error fetching duplicate records:', error);
+            setDuplicateRecords([]);
+        }
+    }, [isAuthenticated]);
+
+    const mergeCustomer = useCallback(async (masterId, duplicateIds) => {
+        if (!isAuthenticated) return showModal('Error', 'Anda harus login untuk melakukan aksi ini.');
+        try {
+            const payload = { masterId, duplicateIds };
+            await axios.post(`${API_URL}/services/customers/merge-single`, payload, getTokenConfig());
+            showModal('Berhasil', 'Data pelanggan berhasil digabungkan.');
+            fetchCustomers(1, searchQuery);
+        } catch (error) {
+            console.error('Error merging customer:', error);
+            showModal('Gagal', 'Gagal menggabungkan data pelanggan.');
+        }
+    }, [fetchCustomers, showModal, searchQuery, isAuthenticated]);
+
     return {
         posts,
         bookings,
         customers,
         packages,
         portfolioItems,
-        studios, // ✅ PASTIKAN `studios` dikembalikan
+        studios,
         modalInfo,
         sortKey,
         sortDirection,
@@ -374,7 +406,10 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         bookingData: bookingPagination,
         bookingCurrentPage: bookingPagination.currentPage,
         bookingTotalPages: bookingPagination.totalPages,
-        setBookingPage: setBookingPage
+        setBookingPage: setBookingPage,
+        duplicateRecords,
+        fetchDuplicateRecords,
+        mergeCustomer,
     };
 };
 

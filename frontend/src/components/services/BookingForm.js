@@ -1,8 +1,52 @@
-import React from "react";
+// src/components/BookingForm.jsx
+
+import React, { useState } from "react";
 
 const BookingForm = ({ formData, handleChange, handleSubmit, selectedTime }) => {
+    const [phoneError, setPhoneError] = useState('');
+
+    const handlePhoneChange = (e) => {
+        const value = e.target.value;
+        
+        const rawValue = value.replace(/\D/g, '');
+
+        if (rawValue.startsWith('0')) {
+            setPhoneError("Nomor telepon tidak boleh diawali dengan 0.");
+            handleChange(e); 
+            return;
+        }
+
+        setPhoneError('');
+        handleChange(e);
+    };
+
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+        
+        const rawNumber = formData.nomor_whatsapp.trim();
+        
+        if (rawNumber.startsWith('0')) {
+            setPhoneError("Gagal: Nomor telepon tidak boleh diawali dengan 0.");
+            return;
+        }
+
+        if (!rawNumber) {
+            setPhoneError("Nomor telepon wajib diisi.");
+            return;
+        }
+
+        const formattedData = {
+            ...formData,
+            nomor_whatsapp: `62${rawNumber}`,
+        };
+
+        handleSubmit(formattedData); 
+    };
+
+    const isSubmitDisabled = !!phoneError || !formData.nama || !formData.email;
+
     return (
-        <form onSubmit={handleSubmit} className="flex h-full w-full flex-col">
+        <form onSubmit={handleFormSubmit} className="flex h-full w-full flex-col">
             <h2 className="mb-2 text-2xl font-bold">Tambahkan detail informasi anda</h2>
             <p className="mb-4 text-sm text-gray-500">untuk mengkonfirmasi pesanan</p>
 
@@ -49,12 +93,16 @@ const BookingForm = ({ formData, handleChange, handleSubmit, selectedTime }) => 
                         id="nomor_whatsapp"
                         name="nomor_whatsapp"
                         value={formData.nomor_whatsapp}
-                        onChange={handleChange}
+                        onChange={handlePhoneChange} 
                         required
-                        className="min-w-0 flex-1 rounded-r-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                        placeholder="8123456789"
+                        className={`min-w-0 flex-1 rounded-r-lg border px-3 py-2 focus:outline-none focus:ring-2 ${
+                            phoneError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'
+                        }`}
+                        placeholder="8123456789 (tanpa 0 di depan)"
+                        pattern="[1-9][0-9]{8,14}" 
                     />
                 </div>
+                {phoneError && <p className="mt-1 text-xs text-red-500 font-medium">{phoneError}</p>}
             </div>
 
             <div className="mb-4 flex-1">
@@ -90,7 +138,10 @@ const BookingForm = ({ formData, handleChange, handleSubmit, selectedTime }) => 
             <div className="mt-auto">
                 <button
                     type="submit"
-                    className="w-full rounded-full bg-green-600 px-6 py-3 font-bold text-white transition-colors duration-200 hover:bg-green-700"
+                    disabled={isSubmitDisabled} 
+                    className={`w-full rounded-full px-6 py-3 font-bold text-white transition-colors duration-200 ${
+                        isSubmitDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                    }`}
                 >
                     Konfirmasi Pemesanan
                 </button>

@@ -4,6 +4,7 @@ import moment from 'moment';
 import { FaSearch, FaChevronDown } from 'react-icons/fa';
 import { FaUpload, FaDownload } from 'react-icons/fa6';
 import fileDownload from 'js-file-download';
+import MergeModal from './MergeModal';
 
 const CustomersData = ({ 
     customersData,
@@ -11,7 +12,10 @@ const CustomersData = ({
     fetchCustomers, onSelectCustomer, currentPage, totalPages, totalItems, 
     setPage,
     searchQuery, setSearchQuery, 
-    selectedTag, setSelectedTag
+    selectedTag, setSelectedTag,
+    fetchDuplicateRecords,
+    duplicateRecords,
+    mergeCustomer
 }) => {
     const [isEditingCustomer, setIsEditingCustomer] = useState(false);
     const [currentCustomer, setCurrentCustomer] = useState(null);
@@ -22,6 +26,8 @@ const CustomersData = ({
     const [isTagsDropdownOpen, setIsTagsDropdownOpen] = useState(false);
     const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [showMergeModal, setShowMergeModal] = useState(false); // ✅ Tambahan state untuk modal
+    const [customerToMerge, setCustomerToMerge] = useState(null); // ✅ Tambahan state
     
     const availableTags = ['Tag Baru', 'Loyal', 'VIP', 'Reguler'];
 
@@ -127,14 +133,43 @@ const CustomersData = ({
         }
     };
 
-    // ✅ PERBAIKAN: Gunakan sortedCustomers sebagai sumber data utama
+    const handleMergeAll = async () => {
+        showModal('Konfirmasi Gabung', 'Apakah Anda yakin ingin menggabungkan semua entri duplikat?', async () => {
+            try {
+                const token = localStorage.getItem('admin-token');
+                const config = { headers: { 'x-access-token': token } };
+                await axios.post('http://localhost:8080/api/services/customers/merge-duplicates', {}, config);
+                showModal('Berhasil', 'Data pelanggan berhasil digabungkan!');
+                fetchCustomers();
+            } catch (error) {
+                console.error('Error merging duplicates:', error);
+                showModal('Gagal', 'Gagal menggabungkan data pelanggan.');
+            }
+        });
+    };
+    
+    // ✅ FUNGSI BARU: untuk menampilkan modal gabung
+    const handleShowMergeModal = async (customer) => {
+        if (customer.total_bookings > 1) {
+            setCustomerToMerge(customer);
+            await fetchDuplicateRecords(customer.nomor_whatsapp);
+            setShowMergeModal(true);
+        } else {
+            showModal('Info', 'Pelanggan ini tidak memiliki entri duplikat.');
+        }
+    };
+
+    const handleCloseMergeModal = () => {
+        setShowMergeModal(false);
+        setCustomerToMerge(null);
+    };
+
     const customersToDisplay = customersData.data;
 
     const renderPagination = () => {
         const pages = [];
         const safeTotalPages = totalPages || 1;
         
-        // Tampilkan 2 halaman di sekitar halaman saat ini, ditambah halaman pertama dan terakhir
         const startPage = Math.max(1, currentPage - 1);
         const endPage = Math.min(safeTotalPages, currentPage + 1);
 
@@ -204,7 +239,12 @@ const CustomersData = ({
             <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex space-x-2">
-                        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">Gabung</button>
+                        <button 
+                            onClick={handleMergeAll} 
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200 hover:bg-blue-700"
+                        >
+                            Gabungkan Semua Duplikat
+                        </button>
                         <button className="bg-white text-gray-800 px-4 py-2 rounded-lg border border-gray-300 text-sm">Tanggal Lahir</button>
                         
                         <div className="relative">
@@ -321,6 +361,15 @@ const CustomersData = ({
                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{customer.status || '-'}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-left text-sm font-medium">
                                     <button onClick={() => handleEditCustomerClick(customer)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
+                                    {/* ✅ TAMBAHAN: Tombol Gabung di setiap baris */}
+                                    {customer.total_bookings > 1 && (
+                                      <button 
+                                          onClick={() => handleShowMergeModal(customer)} 
+                                          className="text-blue-600 hover:underline ml-2"
+                                      >
+                                          Gabung
+                                      </button>
+                                    )}
                                 </td>
                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{customer.total_bookings}</td>
                             </tr>
@@ -329,6 +378,15 @@ const CustomersData = ({
                 </table>
             </div>
             {renderPagination()}
+            {/* ✅ TAMBAHAN: Modal untuk menggabungkan duplikat */}
+            {showMergeModal && (
+                <MergeModal
+                    onClose={handleCloseMergeModal}
+                    customerToMerge={customerToMerge}
+                    duplicateRecords={duplicateRecords}
+                    mergeCustomer={mergeCustomer}
+                />
+            )}
         </div>
     );
 };

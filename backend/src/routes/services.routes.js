@@ -17,14 +17,17 @@ router.delete("/:id", verifyToken, servicesController.delete);
 router.put("/:id/confirm", verifyToken, servicesController.confirmBooking);
 router.put("/:id/cancel", verifyToken, servicesController.cancelBooking);
 
-// ✅ Rute baru untuk laporan keuangan
+// ✅ Rute untuk laporan keuangan
 router.get("/financial-report", verifyToken, servicesController.getFinancialReport);
 
 // Rute untuk Data Pelanggan
 router.get("/customers", verifyToken, servicesController.findAllCustomers);
 router.get("/customers/export", verifyToken, servicesController.exportCustomers);
 router.post("/customers/import", verifyToken, upload.single('csvFile'), servicesController.importCustomers);
-router.get("/customer/:nomor_whatsapp", verifyToken, servicesController.getCustomerDetails);
 
+// ✅ PERBAIKAN: RUTE UNTUK MENGGABUNGKAN DUPLIKAT
+router.post("/customers/merge-duplicates", verifyToken, servicesController.mergeDuplicates);
+router.get("/customers/duplicates/:nomor_whatsapp", verifyToken, servicesController.getDuplicateRecords);
+router.post("/customers/merge-single", verifyToken, servicesController.mergeSingleCustomer);
 
 module.exports = router;

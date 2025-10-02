@@ -1,5 +1,3 @@
-// src/controllers/services.controller.js
-
 const connection = require("../db.js");
 const { stringify } = require("csv-stringify");
 const { parse } = require("csv-parse");
@@ -136,9 +134,10 @@ exports.create = (req, res) => {
  * ✅ PERBAIKAN: Menambahkan parameter pagination
  */
 exports.findAll = (req, res) => {
-    const { studio_name, studioId, page = 1, limit = 10 } = req.query;
-    const offset = (page - 1) * limit;
+    const { studio_name, studioId, page, limit } = req.query;
 
+    const isPaginated = page && limit;
+    
     let whereClause = '';
     let params = [];
     if (studio_name) {
@@ -146,24 +145,44 @@ exports.findAll = (req, res) => {
         params.push(studio_name);
     }
     
-    // Query untuk menghitung total pemesanan
-    const countQuery = `SELECT COUNT(*) AS total_count FROM services s ${whereClause}`;
-    connection.query(countQuery, params, (err, countResult) => {
-        if (err) {
-            console.error("❌ Error fetching booking count:", err.sqlMessage);
-            return res.status(500).send({ message: "Terjadi kesalahan saat mengambil data pemesanan.", error: err.sqlMessage });
-        }
-        const totalCount = countResult[0].total_count;
+    // Query utama untuk mengambil data
+    let dataQuery = `SELECT s.*, p.nama_paket AS package_name, p.harga AS package_price, p.image_url AS image_url 
+                     FROM services s 
+                     LEFT JOIN packages p ON s.package_id = p.id
+                     ${whereClause} 
+                     ORDER BY s.tanggal DESC, s.waktu_mulai DESC`;
 
-        // Query untuk mengambil data pemesanan dengan pagination
-        let dataQuery = `SELECT s.*, p.nama_paket AS package_name, p.harga AS package_price, p.image_url AS image_url 
-                         FROM services s 
-                         LEFT JOIN packages p ON s.package_id = p.id
-                         ${whereClause} 
-                         ORDER BY s.tanggal DESC, s.waktu_mulai DESC
-                         LIMIT ? OFFSET ?`;
-        
-        connection.query(dataQuery, [...params, parseInt(limit), parseInt(offset)], (err, results) => {
+    if (isPaginated) {
+        const offset = (page - 1) * limit;
+        // Query untuk menghitung total pemesanan
+        const countQuery = `SELECT COUNT(*) AS total_count FROM services s ${whereClause}`;
+        connection.query(countQuery, params, (err, countResult) => {
+            if (err) {
+                console.error("❌ Error fetching booking count:", err.sqlMessage);
+                return res.status(500).send({ message: "Terjadi kesalahan saat mengambil data pemesanan.", error: err.sqlMessage });
+            }
+            const totalCount = countResult[0].total_count;
+            
+            dataQuery += ` LIMIT ? OFFSET ?`;
+            connection.query(dataQuery, [...params, parseInt(limit), parseInt(offset)], (err, results) => {
+                if (err) {
+                    console.error("❌ Error fetching bookings:", err.sqlMessage);
+                    return res.status(500).send({
+                        message: "Terjadi kesalahan saat mengambil data pemesanan.",
+                        error: err.sqlMessage,
+                    });
+                }
+                res.send({
+                    data: results,
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(totalCount / limit),
+                    totalItems: totalCount,
+                });
+            });
+        });
+    } else {
+        // Logika untuk kalender (tanpa pagination)
+        connection.query(dataQuery, params, (err, results) => {
             if (err) {
                 console.error("❌ Error fetching bookings:", err.sqlMessage);
                 return res.status(500).send({
@@ -171,14 +190,9 @@ exports.findAll = (req, res) => {
                     error: err.sqlMessage,
                 });
             }
-            res.send({
-                data: results,
-                currentPage: parseInt(page),
-                totalPages: Math.ceil(totalCount / limit),
-                totalItems: totalCount,
-            });
+            res.send(results);
         });
-    });
+    }
 };
 
 /**
@@ -297,46 +311,51 @@ exports.cancelBooking = (req, res) => {
 
 /**
  * GET /services/customers
- * ✅ PERBAIKAN: Menambahkan parameter pagination dan total_count
+ * ✅ Mengelompokkan hanya berdasarkan nomor_whatsapp dan menambahkan filter pencarian
  */
 exports.findAllCustomers = (req, res) => {
-    const { page = 1, limit = 10 } = req.query; // Default: halaman 1, 10 data
+    const { page = 1, limit = 10, search = '' } = req.query;
     const offset = (page - 1) * limit;
 
-    // Query untuk menghitung total pelanggan
+    let whereClause = '';
+    let params = [];
+    if (search) {
+        whereClause = `WHERE nama LIKE ? OR email LIKE ? OR nomor_whatsapp LIKE ?`;
+        params = [`%${search}%`, `%${search}%`, `%${search}%`];
+    }
+    
+    // Query untuk menghitung total pelanggan unik yang cocok dengan pencarian
     const countQuery = `
-        SELECT COUNT(DISTINCT nomor_whatsapp) AS total_count
-        FROM services;
+        SELECT COUNT(T1.nomor_whatsapp) AS total_count 
+        FROM (SELECT DISTINCT nomor_whatsapp FROM services ${whereClause}) AS T1;
     `;
-
-    connection.query(countQuery, (err, countResult) => {
+    connection.query(countQuery, params, (err, countResult) => {
         if (err) {
             console.error("❌ Error fetching customer count:", err.sqlMessage);
             return res.status(500).send({ message: "Terjadi kesalahan saat mengambil data pelanggan.", error: err.sqlMessage });
         }
-
         const totalCount = countResult[0].total_count;
 
-        // Query untuk mengambil data pelanggan dengan pagination
         const dataQuery = `
             SELECT 
-                nama, 
-                email, 
-                nomor_whatsapp, 
-                COUNT(*) AS total_bookings,
-                MAX(tanggal) AS last_visit_date
-            FROM services 
-            GROUP BY nomor_whatsapp 
+                MAX(s.nama) AS nama, 
+                MAX(s.email) AS email, 
+                s.nomor_whatsapp, 
+                MAX(s.tanggal) AS last_visit_date,
+                (SELECT COUNT(*) FROM services AS s2 WHERE s2.nomor_whatsapp = s.nomor_whatsapp) AS total_bookings,
+                COUNT(s.id) > 1 AS has_duplicates
+            FROM services s 
+            ${whereClause}
+            GROUP BY s.nomor_whatsapp
             ORDER BY last_visit_date DESC, total_bookings DESC
             LIMIT ? OFFSET ?;
         `;
         
-        connection.query(dataQuery, [parseInt(limit), parseInt(offset)], (err, results) => {
+        connection.query(dataQuery, [...params, parseInt(limit), parseInt(offset)], (err, results) => {
             if (err) {
                 console.error("❌ Error fetching customers:", err.sqlMessage);
                 return res.status(500).send({ message: "Terjadi kesalahan saat mengambil data pelanggan.", error: err.sqlMessage });
             }
-            // Mengirim data dan informasi pagination
             res.send({
                 data: results,
                 currentPage: parseInt(page),
@@ -409,70 +428,70 @@ exports.importCustomers = (req, res) => {
 
 // Fungsi baru untuk mengambil detail pelanggan berdasarkan nomor WhatsApp
 exports.getCustomerDetails = (req, res) => {
-    const { nomor_whatsapp } = req.params;
+    const { nomor_whatsapp } = req.params;
 
-    if (!nomor_whatsapp) {
-        return res.status(400).send({ message: "Nomor WhatsApp diperlukan untuk mengambil detail pelanggan." });
-    }
+    if (!nomor_whatsapp) {
+        return res.status(400).send({ message: "Nomor WhatsApp diperlukan untuk mengambil detail pelanggan." });
+    }
 
-    const customerQuery = `
-        SELECT 
-            nama, 
-            email, 
-            nomor_whatsapp,
-            COUNT(*) AS total_bookings,
-            MAX(tanggal) AS last_visit_date
-        FROM services
-        WHERE nomor_whatsapp = ?
-        GROUP BY nomor_whatsapp
-        LIMIT 1;
-    `;
+    const customerQuery = `
+        SELECT 
+            nama, 
+            email, 
+            nomor_whatsapp,
+            COUNT(*) AS total_bookings,
+            MAX(tanggal) AS last_visit_date
+        FROM services
+        WHERE nomor_whatsapp = ?
+        GROUP BY nomor_whatsapp
+        LIMIT 1;
+    `;
 
-    connection.query(customerQuery, [nomor_whatsapp], (err, customerResult) => {
-        if (err) {
-            console.error("❌ Error fetching customer details:", err.sqlMessage);
-            return res.status(500).send({ message: "Gagal mengambil detail pelanggan.", error: err.sqlMessage });
-        }
+    connection.query(customerQuery, [nomor_whatsapp], (err, customerResult) => {
+        if (err) {
+            console.error("❌ Error fetching customer details:", err.sqlMessage);
+            return res.status(500).send({ message: "Gagal mengambil detail pelanggan.", error: err.sqlMessage });
+        }
 
-        if (customerResult.length === 0) {
-            return res.status(404).send({ message: "Pelanggan tidak ditemukan atau tidak memiliki riwayat pemesanan." });
-        }
+        if (customerResult.length === 0) {
+            return res.status(404).send({ message: "Pelanggan tidak ditemukan atau tidak memiliki riwayat pemesanan." });
+        }
 
-        const customer = customerResult[0];
+        const customer = customerResult[0];
 
-        const bookingsQuery = `
-            SELECT 
-                s.*, 
-                p.nama_paket AS package_name, 
-                p.harga AS package_price 
-            FROM services s 
-            LEFT JOIN packages p ON s.package_id = p.id
-            WHERE s.nomor_whatsapp = ?
-            ORDER BY s.tanggal DESC, s.waktu_mulai DESC
-        `;
+        const bookingsQuery = `
+            SELECT 
+                s.*, 
+                p.nama_paket AS package_name, 
+                p.harga AS package_price 
+            FROM services s 
+            LEFT JOIN packages p ON s.package_id = p.id
+            WHERE s.nomor_whatsapp = ?
+            ORDER BY s.tanggal DESC, s.waktu_mulai DESC
+        `;
 
-        connection.query(bookingsQuery, [nomor_whatsapp], (err, bookingsResults) => {
-            if (err) {
-                console.error("❌ Error fetching customer bookings:", err.sqlMessage);
-                return res.status(500).send({ message: "Gagal mengambil riwayat pemesanan pelanggan.", error: err.sqlMessage });
-            }
+        connection.query(bookingsQuery, [nomor_whatsapp], (err, bookingsResults) => {
+            if (err) {
+                console.error("❌ Error fetching customer bookings:", err.sqlMessage);
+                return res.status(500).send({ message: "Gagal mengambil riwayat pemesanan pelanggan.", error: err.sqlMessage });
+            }
 
-            const today = moment().startOf('day');
-            const upcomingBookings = bookingsResults.filter(booking => moment(booking.tanggal).isSameOrAfter(today));
-            const pastBookings = bookingsResults.filter(booking => moment(booking.tanggal).isBefore(today));
+            const today = moment().startOf('day');
+            const upcomingBookings = bookingsResults.filter(booking => moment(booking.tanggal).isSameOrAfter(today));
+            const pastBookings = bookingsResults.filter(booking => moment(booking.tanggal).isBefore(today));
 
-            const summary = {
-                totalBooking: bookingsResults.length,
-                totalPenjualan: bookingsResults.reduce((sum, b) => sum + (b.status === 'confirmed' ? (b.package_price || 0) : 0), 0),
-                belumBayar: bookingsResults.filter(b => b.status === 'pending').length,
-                komplit: bookingsResults.filter(b => b.status === 'confirmed').length,
-                pembatalan: bookingsResults.filter(b => b.status === 'canceled').length,
-                tidakHadir: 0,
-            };
+            const summary = {
+                totalBooking: bookingsResults.length,
+                totalPenjualan: bookingsResults.reduce((sum, b) => sum + (b.status === 'confirmed' ? (b.package_price || 0) : 0), 0),
+                belumBayar: bookingsResults.filter(b => b.status === 'pending').length,
+                komplit: bookingsResults.filter(b => b.status === 'confirmed').length,
+                pembatalan: bookingsResults.filter(b => b.status === 'canceled').length,
+                tidakHadir: 0,
+            };
 
-            res.send({ ...customer, summary, upcomingBookings, pastBookings });
-        });
-    });
+            res.send({ ...customer, summary, upcomingBookings, pastBookings });
+        });
+    });
 };
 
 // Fungsi baru untuk memperbarui data pelanggan
@@ -492,10 +511,180 @@ exports.updateCustomer = (req, res) => {
       return res.status(500).send({ message: `Gagal memperbarui data pelanggan: ${err.sqlMessage}` });
     }
     if (result.affectedRows === 0) {
-      return res.status(404).send({ message: "Pelanggan tidak ditemukan." });
+      return res.status(404).send({ message: "Pemesanan tidak ditemukan." });
     }
     res.send({ message: "Data pelanggan berhasil diperbarui." });
   });
+};
+
+exports.getFinancialReport = (req, res) => {
+    const { month, year, studio_name } = req.query;
+
+    let query = `
+        SELECT 
+            s.id,
+            s.tanggal,
+            s.nama,
+            p.nama_paket AS package_name,
+            p.harga AS package_price,
+            s.studio_name
+        FROM services s
+        LEFT JOIN packages p ON s.package_id = p.id
+        WHERE s.status = 'confirmed'
+    `;
+
+    const params = [];
+
+    if (year && month) {
+        query += ` AND YEAR(s.tanggal) = ? AND MONTH(s.tanggal) = ?`;
+        params.push(year, month);
+    } else if (year) {
+        query += ` AND YEAR(s.tanggal) = ?`;
+        params.push(year);
+    } else if (month) {
+        query += ` AND MONTH(s.tanggal) = ?`;
+        params.push(month);
+    }
+    if (studio_name) {
+        query += ` AND s.studio_name = ?`;
+        params.push(studio_name);
+    }
+
+    query += ` ORDER BY s.tanggal DESC`;
+
+    connection.query(query, params, (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching financial report:", err.sqlMessage);
+            return res.status(500).send({
+                message: "Terjadi kesalahan saat mengambil laporan keuangan.",
+                error: err.sqlMessage,
+            });
+        }
+        res.send(results);
+    });
+};
+
+// ✅ FUNGSI BARU: Menggabungkan SEMUA duplikat secara otomatis (untuk rute POST /customers/merge-duplicates)
+exports.mergeDuplicates = async (req, res) => {
+    try {
+        const queryFindDuplicates = `
+            SELECT nomor_whatsapp, GROUP_CONCAT(id ORDER BY tanggal DESC) AS id_list
+            FROM services
+            GROUP BY nomor_whatsapp
+            HAVING COUNT(*) > 1
+        `;
+
+        const [duplicates] = await connection.promise().query(queryFindDuplicates);
+        
+        if (duplicates.length === 0) {
+            return res.send({ message: "Tidak ada duplikat yang ditemukan." });
+        }
+
+        let totalDeleted = 0;
+        let totalMergedSets = 0;
+
+        for (const { nomor_whatsapp, id_list } of duplicates) {
+            const ids = id_list.split(',').map(id => parseInt(id, 10));
+            
+            const masterId = ids[0];
+            const duplicateIds = ids.slice(1);
+
+            // 1. Ambil data nama/email dari master record
+            const queryGetMasterData = `SELECT nama, email FROM services WHERE id = ?`;
+            const [masterData] = await connection.promise().query(queryGetMasterData, [masterId]);
+            
+            if (masterData.length > 0) {
+                const { nama, email } = masterData[0];
+                
+                // 2. Normalize semua record duplikat (yang akan dihapus)
+                const queryUpdateDuplicates = `
+                    UPDATE services
+                    SET nama = ?, email = ?
+                    WHERE id IN (?)
+                `;
+                await connection.promise().query(queryUpdateDuplicates, [nama, email, duplicateIds]);
+
+                // 3. Hapus record duplikat (selain masterId)
+                const queryDeleteDuplicates = `DELETE FROM services WHERE id IN (?)`;
+                const [deleteResult] = await connection.promise().query(queryDeleteDuplicates, [duplicateIds]);
+                
+                totalDeleted += deleteResult.affectedRows;
+                totalMergedSets++;
+            }
+        }
+        
+        res.send({ message: `Berhasil menormalisasi ${totalMergedSets} set duplikat. Menghapus ${totalDeleted} entri.` });
+
+    } catch (err) {
+        console.error("❌ Error merging duplicates:", err.sqlMessage || err);
+        res.status(500).send({ message: "Terjadi kesalahan saat menggabungkan data.", error: err.sqlMessage || err });
+    }
+};
+
+exports.getDuplicateRecords = (req, res) => {
+    const { nomor_whatsapp } = req.params;
+    if (!nomor_whatsapp) {
+        return res.status(400).send({ message: "Nomor WhatsApp diperlukan." });
+    }
+
+    const query = `
+        SELECT id, nama, email, tanggal, waktu_mulai, waktu_selesai, studio_name
+        FROM services
+        WHERE nomor_whatsapp = ?
+        ORDER BY tanggal DESC, id DESC
+    `;
+    
+    connection.query(query, [nomor_whatsapp], (err, records) => {
+        if (err) {
+            console.error("❌ Error fetching duplicate records:", err.sqlMessage);
+            return res.status(500).send({ message: "Terjadi kesalahan saat mengambil data duplikat.", error: err.sqlMessage });
+        }
+        res.send(records);
+    });
+};
+
+exports.mergeSingleCustomer = async (req, res) => {
+    const { masterId, duplicateIds } = req.body;
+    
+    if (!masterId || !duplicateIds || !Array.isArray(duplicateIds) || duplicateIds.length === 0) {
+        return res.status(400).send({ message: "Data tidak lengkap. Diperlukan masterId dan ID duplikat." });
+    }
+
+    try {
+        await connection.promise().beginTransaction();
+
+        // 1. Ambil nama/email dari master record untuk normalisasi
+        const queryGetMasterData = `SELECT nama, email FROM services WHERE id = ?`;
+        const [masterData] = await connection.promise().query(queryGetMasterData, [masterId]);
+        
+        if (masterData.length === 0) {
+            await connection.promise().rollback();
+            return res.status(404).send({ message: "Master record tidak ditemukan." });
+        }
+        const { nama, email } = masterData[0];
+        
+        // 2. Normalize SEMUA record duplikat (yang akan dihapus) agar nama dan email konsisten
+        const allIds = [...duplicateIds, masterId];
+        const queryNormalizeDuplicates = `
+            UPDATE services
+            SET nama = ?, email = ?
+            WHERE id IN (?)
+        `;
+        await connection.promise().query(queryNormalizeDuplicates, [nama, email, allIds]);
+
+        // 3. Hapus record duplikat (selain masterId)
+        const queryDeleteDuplicates = `DELETE FROM services WHERE id IN (?)`;
+        const [result] = await connection.promise().query(queryDeleteDuplicates, [duplicateIds]);
+
+        await connection.promise().commit();
+
+        res.send({ message: `Pelanggan berhasil digabungkan. ${result.affectedRows} entri duplikat dihapus.` });
+
+    } catch (err) {
+        await connection.promise().rollback();
+        console.error("❌ Error merging single customer:", err.sqlMessage || err);
+        res.status(500).send({ message: "Terjadi kesalahan saat menggabungkan data.", error: err.sqlMessage || err });
+    }
 };
 
 exports.getFinancialReport = (req, res) => {
@@ -505,30 +694,22 @@ exports.getFinancialReport = (req, res) => {
         SELECT 
             s.id,
             s.tanggal,
-            s.nama,
+            s.nama AS customer_name,
             p.nama_paket AS package_name,
             p.harga AS package_price,
-            s.studio_name
+            s.studio_name,
+            s.status
         FROM services s
         LEFT JOIN packages p ON s.package_id = p.id
-        WHERE s.status = 'confirmed'
+        WHERE YEAR(s.tanggal) = ? 
+          AND MONTH(s.tanggal) = ?
     `;
 
-    const params = [];
+    const params = [year, month];
 
-    if (year && month) {
-        query += ` AND YEAR(s.tanggal) = ? AND MONTH(s.tanggal) = ?`;
-        params.push(year, month);
-    } else if (year) {
-        query += ` AND YEAR(s.tanggal) = ?`;
-        params.push(year);
-    } else if (month) {
-        query += ` AND MONTH(s.tanggal) = ?`;
-        params.push(month);
-    }
-    // ✅ TAMBAHAN: Filter berdasarkan studio
-    if (studio_name) {
-        query += ` AND s.studio_name = ?`;
+    // kalau ada filter studio_name, tambahkan ke query
+    if (studio_name && studio_name.trim() !== "") {
+        query += ` AND LOWER(TRIM(s.studio_name)) = LOWER(TRIM(?))`;
         params.push(studio_name);
     }
 
@@ -537,11 +718,9 @@ exports.getFinancialReport = (req, res) => {
     connection.query(query, params, (err, results) => {
         if (err) {
             console.error("❌ Error fetching financial report:", err.sqlMessage);
-            return res.status(500).send({
-                message: "Terjadi kesalahan saat mengambil laporan keuangan.",
-                error: err.sqlMessage,
-            });
+            return res.status(500).send({ error: err.sqlMessage });
         }
+
         res.send(results);
     });
 };
