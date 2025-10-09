@@ -20,9 +20,24 @@ function NewsletterPage() {
         fetchPosts();
     }, []);
 
+    const getThumbnailUrl = (post) => {
+        // Cek jika ada image_url (gambar tunggal/thumbnail video)
+        if (post.image_url) {
+            return `http://localhost:8080/assets/images/${post.image_url}`;
+        }
+        
+        // Cek jika media_url adalah array (gambar slide) dan ambil gambar pertama
+        if (Array.isArray(post.media_url) && post.media_url.length > 0) {
+            return `http://localhost:8080/assets/images/${post.media_url[0]}`;
+        }
+        
+        // Jika tidak ada gambar yang ditemukan, kembalikan placeholder
+        return 'https://placehold.co/800x600/D1D5DB/1F2937?text=No+Image';
+    };
+
     return (
         <div className="font-sans text-gray-900 bg-white min-h-screen pt-24">
-            {/* Header Utama, mengadopsi gaya dari PortfolioPage */}
+            {/* Header Utama */}
             <div className="max-w-screen-xl mx-auto px-5 mb-16">
                 <h1 className="text-6xl md:text-7xl font-light leading-none">
                     <span className="font-bold">Our latest</span> Stories & News
@@ -35,7 +50,7 @@ function NewsletterPage() {
                 </div>
             </div>
             
-            {/* Grid Postingan dengan konsep Masonry, seperti PortfolioPage */}
+            {/* Grid Postingan */}
             <div className="max-w-screen-xl mx-auto px-5">
                 {loading ? (
                     <div className="text-center text-gray-500">Memuat postingan...</div>
@@ -47,13 +62,12 @@ function NewsletterPage() {
                                 to={`/blog/${post.id}`}
                                 className="block h-full p-3 transform transition duration-300 hover:-translate-y-1 hover:shadow-2xl bg-white rounded-lg flex flex-col"
                             >
-                                {post.image_url && (
-                                    <img
-                                        src={`http://localhost:8080/assets/images/${post.image_url}`}
-                                        alt={post.title}
-                                        className="w-full h-48 object-cover rounded-md flex-shrink-0"
-                                    />
-                                )}
+                                <img
+                                    src={getThumbnailUrl(post)}
+                                    alt={post.title}
+                                    className="w-full h-48 object-cover rounded-md flex-shrink-0"
+                                    onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/800x600/D1D5DB/1F2937?text=No+Image"; }}
+                                />
                                 <div className="mt-4 flex flex-col flex-grow">
                                     <h3 className="mt-2 text-xl font-medium">{post.title}</h3>
                                     <p className="text-sm text-gray-700 mt-2 flex-grow">

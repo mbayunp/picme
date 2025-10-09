@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import moment from "moment";
-import InitialBanner from "../components/InitialBanner"; // ✅ IMPORT KOMPONEN BARU
+import InitialBanner from "../components/InitialBanner";
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
-// Komponen baru untuk animasi Liquid Blob
+// Komponen Liquid Blob (tidak ada perubahan)
 const LiquidBlobAnimation = () => {
     return (
         <div className="absolute inset-0 z-0 overflow-hidden">
@@ -21,50 +21,50 @@ const LiquidBlobAnimation = () => {
     );
 };
 
-// Testimonial Section Component
+// Testimonial Section (tidak ada perubahan)
 function TestimonialSection() {
     const testimonials = [
         {
             id: 1,
-            name: "Emma Trueman",
-            role: "Envato Market",
-            avatar: "https://randomuser.me/api/portraits/women/1.jpg",
-            text: "I had the pleasure of working with this creative agency, and I must say, they truly impressed me. They consistently think outside the box, resulting in impressive and impactful work. I highly recommend this agency for their consistent delivery of exceptional creative solutions.",
+            name: "Agus Ahmad Juandi",
+            role: "Costumer",
+            avatar: "/images/testi1.png", 
+            text: "Tempatnya bersih, cozy, cameranya oke banget cocok buat yang mau buat untuk temen dan keluarga. Oke banget pokonyaaa must tryy!!!.",
         },
         {
             id: 2,
-            name: "John Doe",
-            role: "CEO Company",
-            avatar: "https://randomuser.me/api/portraits/men/2.jpg",
-            text: "Layanan ini sangat membantu pekerjaan saya, cepat dan responsif. Sangat puas dengan hasilnya!",
+            name: "Muh Iqshan",
+            role: "Costumer",
+            avatar: "/images/testi2.png",
+            text: "Harga budget pelajar kualitas anti gagal dah, note disini fotonya pake time ya bukan per 1 photo, jadi kalian bisa foto sepuasnya dengan waktu yang di tentukan dan semua hasil foto dikirim overall Mntap",
         },
         {
             id: 3,
-            name: "Jane Smith",
-            role: "Lead Designer",
-            avatar: "https://randomuser.me/api/portraits/women/3.jpg",
-            text: "Prosesnya mudah dipahami, timnya juga sangat ramah dan profesional. Highly recommended!",
+            name: "Melani 06",
+            role: "Costumer",
+            avatar: "/images/testi3.png",
+            text: "Foto Studio Palingg keren di Cianjur! Selain harga nya Murmer,Kaka” yg jaga nya Ramah lagi. ga nyesel dehh Best bgtt!🤩😍👍🏻✨",
         },
         {
             id: 4,
-            name: "Michael Brown",
-            role: "Marketing Manager",
-            avatar: "https://randomuser.me/api/portraits/men/4.jpg",
-            text: "Saya merasa lebih produktif setelah menggunakan layanan ini. Hasilnya sesuai harapan.",
+            name: "Nur syifa Fitria",
+            role: "Costumer",
+            avatar: "/images/testi4.png",
+            text: "Tempatnya bagus nyaman hasil fotonya pun bagus jernih udah 3 kali gapernah gagal tidak mengecewakan.",
         },
         {
             id: 5,
-            name: "Olivia Davis",
-            role: "Project Coordinator",
-            avatar: "https://randomuser.me/api/portraits/women/5.jpg",
-            text: "Sangat praktis dan efisien. Membantu saya menghemat banyak waktu dalam pekerjaan sehari-hari.",
+            name: "Ratu Ratustftmh",
+            role: "Costumer",
+            avatar: "/images/testi5.png",
+            text: "Bagus banget,hasil foto jernih,kualitasnya bagus,tempat bersih,ramah dikantong pelajar hehehe udah beberapa kali foto disini❤️❤️.",
         },
         {
             id: 6,
-            name: "David Wilson",
-            role: "Software Developer",
-            avatar: "https://randomuser.me/api/portraits/men/6.jpg",
-            text: "Fantastis! Tim mereka sangat responsif dan memberikan solusi yang inovatif. Sangat direkomendasikan untuk proyek apa pun.",
+            name: "Muhammad Salman N",
+            role: "Costumer",
+            avatar: "/images/testi6.png",
+            text: "GOKILLL🔥, BUAT KALIAN YANG MAU DIPOTO STUDIO AYOO RAME RAME KUNJUNGI PICME PHOTO STUDIO😍🤩. JANGAN LUPA BUAT YANG PUNYA AYANG BUNGKUS AJA BAWA KE PICME DIJAMIN PASTI SENENG👉👈. HASILNYA CAKEP BANGETT JANGAN LUPA AJAK TEMEN TEMEN KALIAN SAMA KELUARGANYA😎😋",
         }
     ];
 
@@ -132,16 +132,13 @@ function TestimonialSection() {
 }
 
 function HomePage() {
-    const [showPicMeLogo, setShowPicMeLogo] = useState(false);
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
-    // ✅ STATE BARU UNTUK BANNER
     const [showInitialBanner, setShowInitialBanner] = useState(false);
     const [bannerData, setBannerData] = useState([]);
 
     const handleWhatWeDoClick = () => {
         alert("WHAT WE DO button clicked!");
-        // setShowPicMeLogo(!showPicMeLogo);
     };
 
     useEffect(() => {
@@ -157,7 +154,6 @@ function HomePage() {
         };
         fetchPosts();
         
-        // ✅ EFFECT BARU: Memuat data banner dan mengecek status penutupan
         const fetchBanners = async () => {
             try {
                 const response = await axios.get(`http://localhost:8080/api/announcements`); 
@@ -183,7 +179,46 @@ function HomePage() {
 
     const handleCloseBanner = () => {
         setShowInitialBanner(false);
+        // localStorage.setItem('bannerClosedDate', moment().format('YYYY-MM-DD'));
     };
+
+    const getThumbnailUrl = (post) => {
+        if (post.image_url) {
+            return `http://localhost:8080/assets/images/${post.image_url}`;
+        }
+        
+        if (Array.isArray(post.media_url) && post.media_url.length > 0) {
+            const firstImage = post.media_url[0];
+            return `http://localhost:8080/assets/images/${firstImage}`;
+        }
+        
+        return 'https://placehold.co/800x600/D1D5DB/1F2937?text=No+Image';
+    };
+
+    const renderPostCard = (post) => (
+        <div key={post.id} className="border rounded-lg overflow-hidden shadow-md transform transition duration-300 hover:shadow-xl hover:-translate-y-1">
+            <img
+                src={getThumbnailUrl(post)}
+                alt={post.title}
+                className="w-full h-64 object-cover"
+                onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/800x600/D1D5DB/1F2937?text=Gambar+Gagal+Dimuat"; }}
+            />
+            <div className="p-6">
+                <p className="text-sm text-gray-500 mb-2">
+                    <span className="font-medium">Photo Tips</span> • {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </p>
+                <h3 className="text-xl font-semibold mb-2">
+                    {post.title}
+                </h3>
+                <p className="text-gray-600 mb-4">
+                    {post.content.length > 100 ? post.content.substring(0, 100) + '...' : post.content}
+                </p>
+                <Link to={`/blog/${post.id}`} className="text-blue-600 hover:underline">
+                    View All →
+                </Link>
+            </div>
+        </div>
+    );
 
     const renderPosts = () => {
         if (loading) {
@@ -193,47 +228,11 @@ function HomePage() {
         if (posts.length === 0) {
             return <div className="col-span-2 text-center text-gray-500">Belum ada postingan yang tersedia.</div>;
         }
-
-        const topRowPosts = posts.slice(0, 2);
-        const bottomRowPosts = posts.slice(2, 4);
-
-        const renderPostCard = (post) => (
-            <div key={post.id} className="border rounded-lg overflow-hidden shadow-md transform transition duration-300 hover:shadow-xl hover:-translate-y-1">
-                {post.image_url && (
-                    <img
-                        src={`http://localhost:8080/assets/images/${post.image_url}`}
-                        alt={post.title}
-                        className="w-full h-64 object-cover"
-                    />
-                )}
-                <div className="p-6">
-                    <p className="text-sm text-gray-500 mb-2">
-                        <span className="font-medium">Photo Tips</span> • {new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </p>
-                    <h3 className="text-xl font-semibold mb-2">
-                        {post.title}
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                        {post.content.length > 100 ? post.content.substring(0, 100) + '...' : post.content}
-                    </p>
-                    <Link to={`/blog/${post.id}`} className="text-blue-600 hover:underline">
-                        View All →
-                    </Link>
-                </div>
-            </div>
-        );
-
+        
         return (
-            <>
-                <div className="grid md:grid-cols-2 gap-8">
-                    {topRowPosts.map(renderPostCard)}
-                </div>
-                {bottomRowPosts.length > 0 && (
-                    <div className="grid md:grid-cols-2 gap-8 mt-12 md:mt-24">
-                        {bottomRowPosts.map(renderPostCard)}
-                    </div>
-                )}
-            </>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {posts.map(renderPostCard)}
+            </div>
         );
     };
 
@@ -317,7 +316,6 @@ function HomePage() {
                             <div className="w-24 h-16 md:w-48 md:h-24 overflow-hidden rounded-lg mr-4 md:mr-8 flex-shrink-0">
                                 <img
                                     src="/images/team.jpg"
-                                    alt="Team collaboration"
                                     className="w-full h-full object-cover"
                                 />
                             </div>
@@ -338,34 +336,25 @@ function HomePage() {
                             </button>
                         </div>
                     </div>
-                    {showPicMeLogo && (
-                        <div className="flex justify-center mt-8">
-                            <img
-                                src="/images/logo2.png"
-                                alt="PicMe Studio Logo"
-                                className="w-48 transition-all duration-300 transform scale-100 opacity-100"
-                            />
-                        </div>
-                    )}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mt-16 px-4">
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
                             <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
-                                Branding and <br /> Identity Design
+                                📷 Self Photo Studio <br /> Cianjur
                             </h3>
                             <p className="text-gray-400 text-sm mt-2 flex-grow">
                                 Our creative agency is a team of professionals focused on helping your brand grow.
                             </p>
                             <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
-
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
                             <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
-                                Website Design <br /> and Development
+                                🎥📷 Senandung<br /> Photography
                             </h3>
-                            <p className="text-gray-400 text-sm mt-2 flex-grow"></p>
+                            <p className="text-gray-400 text-sm mt-2 flex-grow">
+                                z
+                            </p>
                             <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
-
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
                             <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
                                 Advertising and <br /> Marketing Campaigns
@@ -373,7 +362,6 @@ function HomePage() {
                             <p className="text-gray-400 text-sm mt-2 flex-grow"></p>
                             <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
-
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
                             <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">
                                 Creative Consulting <br /> and Development

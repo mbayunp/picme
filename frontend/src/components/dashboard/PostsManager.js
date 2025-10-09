@@ -1,158 +1,349 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import moment from 'moment';
+import { FaEdit, FaTrash, FaTimesCircle } from 'react-icons/fa';
+
+// Helper untuk merender video (diperlukan untuk preview)
+const VideoEmbed = ({ url }) => {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        const videoId = url.includes('v=') ? url.split('v=').pop().split('&')[0] : url.split('/').pop();
+        return (
+            <div className="relative w-full h-full">
+                <iframe
+                    className="absolute top-0 left-0 w-full h-full rounded-lg"
+                    src={`https://www.youtube.com/embed/${videoId}`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title="Embedded YouTube Video"
+                ></iframe>
+            </div>
+        );
+    }
+    return (
+        <video controls className="w-full h-full">
+            <source src={url} type="video/mp4" />
+            Browser Anda tidak mendukung tag video.
+        </video>
+    );
+};
 
 const PostsManager = ({ posts, fetchPosts, showModal, handleDelete }) => {
-    const [newPost, setNewPost] = useState({ title: '', content: '' });
-    const [imageFile, setImageFile] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState('');
-    const [isEditing, setIsEditing] = useState(false);
-    const [currentPostId, setCurrentPostId] = useState(null);
+    const [newPost, setNewPost] = useState({ title: '', content: '', postType: 'single-image', mediaUrl: '' });
+    const [imageFile, setImageFile] = useState(null);
+    const [slideFiles, setSlideFiles] = useState([]);
+    const [existingSlides, setExistingSlides] = useState([]);
+    const [isEditing, setIsEditing] = useState(false);
+    const [currentPostId, setCurrentPostId] = useState(null);
+    
+    // Menggabungkan semua URL untuk pratinjau di satu tempat
+    const combinedPreviewUrls = [
+        ...existingSlides.map(url => `http://localhost:8080/assets/images/${url}`),
+        ...slideFiles.map(file => URL.createObjectURL(file))
+    ];
 
-    // Fungsi untuk mereset form
-    const resetForm = () => {
-        setIsEditing(false);
-        setCurrentPostId(null);
-        setNewPost({ title: '', content: '' });
-        setImageFile(null);
-        setPreviewUrl('');
-    };
+    const resetForm = () => {
+        setIsEditing(false);
+        setCurrentPostId(null);
+        setNewPost({ title: '', content: '', postType: 'single-image', mediaUrl: '' });
+        setImageFile(null);
+        setSlideFiles([]);
+        setExistingSlides([]);
+    };
 
-    const handleInputChange = (e) => {
-        setNewPost({ ...newPost, [e.target.name]: e.target.value });
-    };
+    const handleInputChange = (e) => {
+        setNewPost({ ...newPost, [e.target.name]: e.target.value });
+    };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        setImageFile(file);
-        if (file) {
-            setPreviewUrl(URL.createObjectURL(file));
-        } else {
-            // Jika file dihapus, kembalikan ke URL gambar lama (jika ada)
-            const oldPost = posts.find(p => p.id === currentPostId);
-            if (oldPost) {
-                setPreviewUrl(`http://localhost:8080/assets/images/${oldPost.image_url}`);
-            } else {
-                setPreviewUrl('');
-            }
-        }
-    };
+    const handlePostTypeChange = (e) => {
+        setNewPost({ ...newPost, postType: e.target.value, mediaUrl: '' });
+        setImageFile(null);
+        setSlideFiles([]);
+        setExistingSlides([]);
+    };
 
-    const handleAddOrUpdatePost = async (e) => {
-        e.preventDefault();
-        try {
-            const token = localStorage.getItem('admin-token');
-            const formData = new FormData();
-            formData.append('title', newPost.title);
-            formData.append('content', newPost.content);
-            if (imageFile) {
-                formData.append('image', imageFile);
-            }
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        setImageFile(file);
+    };
+    
+    const handleSlideFilesChange = (e) => {
+        const newFiles = Array.from(e.target.files);
+        setSlideFiles(prevFiles => [...prevFiles, ...newFiles]);
+    };
+    
+    const isVideoOrUrl = (url) => {
+        return url.includes('http') || url.includes('www') || url.includes('.mp4');
+    };
 
-            const config = {
-                headers: {
-                    'x-access-token': token,
-                    'Content-Type': 'multipart/form-data',
-                }
-            };
+    const handleAddOrUpdatePost = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('admin-token');
+            const formData = new FormData();
+            formData.append('title', newPost.title);
+            formData.append('content', newPost.content);
+            
+            if (newPost.postType === 'single-image') {
+                if (imageFile) {
+                    formData.append('image', imageFile);
+                }
+            } else if (newPost.postType === 'video-with-thumbnail') {
+                if (imageFile) {
+                    formData.append('image', imageFile);
+                }
+                if (newPost.mediaUrl) {
+                    formData.append('media_url', newPost.mediaUrl);
+                }
+            } else if (newPost.postType === 'slides') {
+                slideFiles.forEach(file => {
+                    formData.append('slides', file); 
+                });
+                formData.append('existing_slides', JSON.stringify(existingSlides));
+            }
 
-            if (isEditing) {
-                await axios.put(`http://localhost:8080/api/posts/${currentPostId}`, formData, config);
-                showModal('Berhasil', 'Postingan berhasil diperbarui!');
-            } else {
-                if (!imageFile) {
-                    showModal('Gagal', 'Silakan unggah gambar untuk postingan baru.');
-                    return;
-                }
-                await axios.post('http://localhost:8080/api/posts', formData, config);
-                showModal('Berhasil', 'Postingan berhasil ditambahkan!');
-            }
+            const config = {
+                headers: {
+                    'x-access-token': token,
+                    'Content-Type': 'multipart/form-data',
+                }
+            };
 
-            resetForm();
-            fetchPosts();
-        } catch (error) {
-            console.error('Error adding/updating post:', error);
-            showModal('Gagal', `Gagal ${isEditing ? 'memperbarui' : 'menambahkan'} postingan.`);
-        }
-    };
+            if (!isEditing) {
+                if ((newPost.postType === 'single-image' || newPost.postType === 'video-with-thumbnail') && !imageFile) {
+                    showModal('Gagal', 'Silakan unggah gambar utama atau thumbnail.');
+                    return;
+                }
+                if (newPost.postType === 'slides' && (slideFiles.length === 0 && existingSlides.length === 0)) {
+                    showModal('Gagal', 'Silakan unggah gambar untuk slide.');
+                    return;
+                }
+                if (newPost.postType === 'video-with-thumbnail' && !newPost.mediaUrl) {
+                    showModal('Gagal', 'Silakan masukkan URL video.');
+                    return;
+                }
+            }
 
-    const handleEditClick = (post) => {
-        setIsEditing(true);
-        setCurrentPostId(post.id);
-        setNewPost({ title: post.title, content: post.content });
-        setPreviewUrl(`http://localhost:8080/assets/images/${post.image_url}`);
-        setImageFile(null); // Penting: reset file gambar agar tidak dikirim ulang jika tidak diubah
-    };
+            if (isEditing) {
+                await axios.put(`http://localhost:8080/api/posts/${currentPostId}`, formData, config);
+                showModal('Berhasil', 'Postingan berhasil diperbarui!');
+            } else {
+                await axios.post('http://localhost:8080/api/posts', formData, config);
+                showModal('Berhasil', 'Postingan berhasil ditambahkan!');
+            }
 
-    const handleCancelEdit = () => {
-        resetForm();
-    };
+            resetForm();
+            fetchPosts();
+        } catch (error) {
+            console.error('Error adding/updating post:', error);
+            showModal('Gagal', `Gagal ${isEditing ? 'memperbarui' : 'menambahkan'} postingan.`);
+        }
+    };
 
-    return (
-        <div className="p-5 bg-gray-100 rounded-lg">
-            <h3 className="text-xl font-bold mb-4">Kelola Postingan</h3>
-            <form onSubmit={handleAddOrUpdatePost} className="flex flex-col gap-4 mb-8">
-                <input
-                    type="text"
-                    name="title"
-                    placeholder="Judul Postingan"
-                    value={newPost.title}
-                    onChange={handleInputChange}
-                    required
-                    className="p-2 border border-gray-300 rounded-md"
-                />
-                <textarea
-                    name="content"
-                    placeholder="Isi Postingan"
-                    value={newPost.content}
-                    onChange={handleInputChange}
-                    required
-                    className="p-2 border border-gray-300 rounded-md"
-                />
-                <input
-                    type="file"
-                    name="image"
-                    onChange={handleImageChange}
-                    className="p-2 border border-gray-300 rounded-md"
-                />
-                {previewUrl && (
-                    <div className="w-36 h-36 border border-gray-300 rounded-lg overflow-hidden">
-                        <img src={previewUrl} alt="Pratinjau Gambar" className="w-full h-full object-cover" />
-                    </div>
-                )}
-                <div className="flex gap-2">
-                    <button type="submit" className="bg-green-600 text-white p-2 rounded-md cursor-pointer hover:bg-green-700 transition">
-                        {isEditing ? 'Perbarui Postingan' : 'Tambah Postingan'}
-                    </button>
-                    {isEditing && (
-                        <button type="button" onClick={handleCancelEdit} className="bg-red-600 text-white p-2 rounded-md cursor-pointer hover:bg-red-700 transition">
-                            Batal
-                        </button>
-                    )}
-                </div>
-            </form>
-            <div className="flex flex-col gap-4">
-                {posts.map(post => (
-                    <div key={post.id} className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between">
-                        {post.image_url && (
-                            <img
-                                src={`http://localhost:8080/assets/images/${post.image_url}`}
-                                alt={post.title}
-                                className="w-24 h-24 object-cover rounded-md mr-4"
-                            />
-                        )}
-                        <div className="flex-grow">
-                            <h4 className="font-semibold">{post.title}</h4>
-                            <p className="text-sm text-gray-500">{post.content.substring(0, 100)}...</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => handleEditClick(post)} className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 transition">Edit</button>
-                            <button onClick={() => handleDelete('posts', post.id, 'Postingan berhasil dihapus!', 'Gagal menghapus postingan.', fetchPosts)} className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition">Hapus</button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+    const handleEditClick = (post) => {
+        setIsEditing(true);
+        setCurrentPostId(post.id);
+        
+        let postType = 'single-image';
+        let mediaUrlDisplay = '';
+        let existingSlidesArray = [];
+
+        if (post.media_url) {
+            if (Array.isArray(post.media_url)) {
+                postType = 'slides';
+                existingSlidesArray = post.media_url;
+            } else if (isVideoOrUrl(post.media_url)) {
+                postType = 'video-with-thumbnail';
+                mediaUrlDisplay = post.media_url;
+            }
+        }
+        
+        setNewPost({ 
+            title: post.title, 
+            content: post.content,
+            postType: postType,
+            mediaUrl: mediaUrlDisplay
+        });
+        
+        setExistingSlides(existingSlidesArray);
+        setImageFile(null);
+        setSlideFiles([]);
+    };
+
+    const handleCancelEdit = () => {
+        resetForm();
+    };
+
+    const handleRemoveSlide = (index) => {
+        if (index < existingSlides.length) {
+            setExistingSlides(prev => prev.filter((_, i) => i !== index));
+        } else {
+            setSlideFiles(prev => prev.filter((_, i) => i !== (index - existingSlides.length)));
+        }
+    };
+
+    const handleDragStart = (e, index) => {
+        e.dataTransfer.setData('slideIndex', index);
+    };
+
+    const handleDrop = (e, dropIndex) => {
+        const dragIndex = parseInt(e.dataTransfer.getData('slideIndex'));
+        
+        // Pastikan drag-and-drop hanya berlaku untuk existing slides
+        if (dragIndex >= 0 && dragIndex < existingSlides.length) {
+            const newSlides = [...existingSlides];
+            const [reorderedItem] = newSlides.splice(dragIndex, 1);
+            newSlides.splice(dropIndex, 0, reorderedItem);
+            
+            setExistingSlides(newSlides);
+        }
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+    };
+
+    return (
+        <div className="p-5 bg-gray-100 rounded-lg">
+            <h3 className="text-xl font-bold mb-4">Kelola Postingan</h3>
+            <form onSubmit={handleAddOrUpdatePost} className="flex flex-col gap-4 mb-8">
+                <input
+                    type="text"
+                    name="title"
+                    placeholder="Judul Postingan"
+                    value={newPost.title}
+                    onChange={handleInputChange}
+                    required
+                    className="p-2 border border-gray-300 rounded-md"
+                />
+                <textarea
+                    name="content"
+                    placeholder="Isi Postingan"
+                    value={newPost.content}
+                    onChange={handleInputChange}
+                    required
+                    className="p-2 border border-gray-300 rounded-md"
+                />
+                
+                {/* Opsi Tipe Postingan */}
+                <div className="flex gap-4">
+                    <label className="inline-flex items-center">
+                        <input type="radio" name="postType" value="single-image" checked={newPost.postType === 'single-image'} onChange={handlePostTypeChange} />
+                        <span className="ml-2">Gambar Saja</span>
+                    </label>
+                    <label className="inline-flex items-center">
+                        <input type="radio" name="postType" value="slides" checked={newPost.postType === 'slides'} onChange={handlePostTypeChange} />
+                        <span className="ml-2">Gambar Slide</span>
+                    </label>
+                    <label className="inline-flex items-center">
+                        <input type="radio" name="postType" value="video-with-thumbnail" checked={newPost.postType === 'video-with-thumbnail'} onChange={handlePostTypeChange} />
+                        <span className="ml-2">Video + Thumbnail</span>
+                    </label>
+                </div>
+
+                {/* Input untuk Gambar Utama / Thumbnail */}
+                {(newPost.postType === 'single-image' || newPost.postType === 'video-with-thumbnail') && (
+                    <>
+                        <label className="block text-sm font-medium text-gray-700">Unggah Gambar Utama/Thumbnail</label>
+                        <input type="file" name="image" onChange={handleImageChange} className="p-2 border border-gray-300 rounded-md" />
+                    </>
+                )}
+                
+                {/* Input untuk Gambar Slide */}
+                {newPost.postType === 'slides' && (
+                    <>
+                        <label className="block text-sm font-medium text-gray-700">Unggah Gambar Slide (Pilih lebih dari satu)</label>
+                        <input type="file" name="slides" multiple onChange={handleSlideFilesChange} className="p-2 border border-gray-300 rounded-md" />
+                    </>
+                )}
+
+                {/* Input untuk URL Video */}
+                {newPost.postType === 'video-with-thumbnail' && (
+                    <>
+                        <label className="block text-sm font-medium text-gray-700">URL Video</label>
+                        <input
+                            type="text"
+                            name="mediaUrl"
+                            placeholder="Contoh: https://youtu.be/videoID"
+                            value={newPost.mediaUrl}
+                            onChange={handleInputChange}
+                            className="p-2 border border-gray-300 rounded-md"
+                        />
+                    </>
+                )}
+                
+                {/* Tampilkan pratinjau yang dapat diurutkan */}
+                {newPost.postType === 'slides' && combinedPreviewUrls.length > 0 && (
+                    <div className="p-4 border border-gray-300 rounded-md">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Atur Urutan Gambar</label>
+                        <div className="flex flex-wrap gap-2">
+                            {combinedPreviewUrls.map((url, index) => (
+                                <div 
+                                    key={url + index} 
+                                    className="w-24 h-24 relative overflow-hidden rounded-md border border-gray-300 cursor-grab"
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, index)}
+                                    onDrop={(e) => handleDrop(e, index)}
+                                    onDragOver={handleDragOver}
+                                >
+                                    <img src={url} alt={`Pratinjau ${index}`} className="w-full h-full object-cover" />
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handleRemoveSlide(index)}
+                                        className="absolute top-1 right-1 text-red-500 hover:text-red-700 bg-white rounded-full"
+                                    >
+                                        <FaTimesCircle />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                
+                {newPost.postType !== 'slides' && imageFile && (
+                    <div className="w-full h-48 border border-gray-300 rounded-lg overflow-hidden relative">
+                        {isVideoOrUrl(URL.createObjectURL(imageFile)) ? (
+                            <VideoEmbed url={URL.createObjectURL(imageFile)} />
+                        ) : (
+                            <img src={URL.createObjectURL(imageFile)} alt="Pratinjau Gambar" className="w-full h-full object-cover" />
+                        )}
+                    </div>
+                )}
+                
+                <div className="flex gap-2">
+                    <button type="submit" className="bg-green-600 text-white p-2 rounded-md cursor-pointer hover:bg-green-700 transition">
+                        {isEditing ? 'Perbarui Postingan' : 'Tambah Postingan'}
+                    </button>
+                    {isEditing && (
+                        <button type="button" onClick={handleCancelEdit} className="bg-red-600 text-white p-2 rounded-md cursor-pointer hover:bg-red-700 transition">
+                            Batal
+                        </button>
+                    )}
+                </div>
+            </form>
+            <div className="flex flex-col gap-4">
+                {posts.map(post => (
+                    <div key={post.id} className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between">
+                        {post.image_url && (
+                            <img
+                                src={`http://localhost:8080/assets/images/${post.image_url}`}
+                                alt={post.title}
+                                className="w-24 h-24 object-cover rounded-md mr-4"
+                            />
+                        )}
+                        <div className="flex-grow">
+                            <h4 className="font-semibold">{post.title}</h4>
+                            <p className="text-sm text-gray-500">{post.content.substring(0, 100)}...</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={() => handleEditClick(post)} className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 transition">Edit</button>
+                            <button onClick={() => handleDelete('posts', post.id, 'Postingan berhasil dihapus!', 'Gagal menghapus postingan.', fetchPosts)} className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-700 transition">Hapus</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 };
 
 export default PostsManager;

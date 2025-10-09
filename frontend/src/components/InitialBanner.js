@@ -71,14 +71,6 @@ const InitialBanner = ({ bannerData, onClose }) => {
     return (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
             <div className="relative flex w-full max-w-xl flex-col items-center justify-center">
-                
-                <button 
-                    onClick={handleClose}
-                    className="absolute -top-10 right-0 z-50 flex size-8 items-center justify-center rounded-full bg-white text-gray-800 shadow-lg hover:bg-gray-200"
-                >
-                    <FaTimes size={16} />
-                </button>
-
                 <div className="relative w-full">
                     
                     <div className="relative w-full overflow-hidden rounded-md shadow-lg">
@@ -105,7 +97,6 @@ const InitialBanner = ({ bannerData, onClose }) => {
                                         alt={`Pengumuman ${index + 1}`}
                                         className="w-full h-auto max-h-[80vh] object-cover rounded-md"
                                         style={{ aspectRatio: '16/9' }} 
-                                        // ✅ PERBAIKAN: Tambahkan onError handler
                                         onError={(e) => {
                                             e.target.onerror = null; // Menghindari looping tak terbatas
                                             e.target.src = "https://placehold.co/1000x700/D1D5DB/1F2937?text=Gagal+Memuat+Gambar";
@@ -117,7 +108,7 @@ const InitialBanner = ({ bannerData, onClose }) => {
                         
                         <div className="absolute bottom-3 left-0 right-0 flex justify-center space-x-2">
                             {bannerData.map((_, index) => (
-                                <button
+                                <button 
                                     key={index}
                                     onClick={() => setCurrentIndex(index)}
                                     className={`size-2 rounded-full transition-colors duration-300 ${
@@ -132,7 +123,7 @@ const InitialBanner = ({ bannerData, onClose }) => {
                 <div className="z-50 mt-4 flex justify-center">
                     <button
                         onClick={handleClose}
-                        className="rounded-lg bg-green-600 px-6 py-2 font-bold text-white shadow-md transition duration-300 hover:bg-green-700"
+                        className="rounded-lg bg-blue-600 px-6 py-2 font-bold text-white shadow-md transition duration-300 hover:bg-blue-700"
                     >
                         Tutup
                     </button>
