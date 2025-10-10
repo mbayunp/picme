@@ -30,21 +30,51 @@ exports.findAll = (req, res) => {
     });
 };
 
+// Ganti fungsi findOne Anda di post.controller.js dengan yang ini
 exports.findOne = (req, res) => {
-    const postId = req.params.id;
-    const query = "SELECT *, media_url FROM posts WHERE id = ?";
-    connection.query(query, [postId], (err, results) => {
-        if (err) {
-            console.error("Error fetching post:", err);
-            return res.status(500).send({ message: err.message || "Error mengambil postingan." });
-        }
-        if (results.length === 0) {
-            return res.status(404).send({ message: "Postingan tidak ditemukan." });
-        }
-        
-        const post = processPostMedia(results[0]);
-        res.send(post);
-    });
+    const postId = parseInt(req.params.id, 10);
+
+    // 1. Query untuk mengambil postingan saat ini
+    const postQuery = "SELECT * FROM posts WHERE id = ?";
+    
+    // 2. Query untuk mengambil ID postingan SEBELUMNYA
+    // (ID terbesar yang lebih kecil dari ID saat ini)
+    const prevQuery = "SELECT id FROM posts WHERE id < ? ORDER BY id DESC LIMIT 1";
+    
+    // 3. Query untuk mengambil ID postingan SELANJUTNYA
+    // (ID terkecil yang lebih besar dari ID saat ini)
+    const nextQuery = "SELECT id FROM posts WHERE id > ? ORDER BY id ASC LIMIT 1";
+
+    connection.query(postQuery, [postId], (err, postResults) => {
+        if (err) {
+            console.error("Error fetching post:", err);
+            return res.status(500).send({ message: "Error mengambil postingan." });
+        }
+        if (postResults.length === 0) {
+            return res.status(404).send({ message: "Postingan tidak ditemukan." });
+        }
+
+        const post = processPostMedia(postResults[0]); // processPostMedia dari kode Anda sebelumnya
+
+        // Jalankan query untuk navigasi
+        connection.query(prevQuery, [postId], (err, prevResults) => {
+            if (err) return res.status(500).send({ message: "Error mengambil navigasi sebelumnya." });
+            
+            connection.query(nextQuery, [postId], (err, nextResults) => {
+                if (err) return res.status(500).send({ message: "Error mengambil navigasi selanjutnya." });
+
+                const prevId = prevResults[0] ? prevResults[0].id : null;
+                const nextId = nextResults[0] ? nextResults[0].id : null;
+
+                // Kirim respons dalam format baru yang diharapkan frontend
+                res.send({
+                    post: post,
+                    prevId: prevId,
+                    nextId: nextId
+                });
+            });
+        });
+    });
 };
 
 exports.create = (req, res) => {
@@ -90,78 +120,69 @@ exports.create = (req, res) => {
 };
 
 exports.update = (req, res) => {
-    const postId = req.params.id;
-    const { title, content, media_url } = req.body;
-    // Ambil file dari req.files
-    const image_file = req.files.image?.[0];
-    const slides = req.files.slides?.map(file => file.filename);
+    const postId = req.params.id;
 
-    connection.query("SELECT image_url, media_url FROM posts WHERE id = ?", [postId], (err, rows) => {
-        if (err) {
-            console.error("Error fetching old media:", err);
-            return res.status(500).send({ message: "Error server." });
-        }
-        
-        const oldImage = rows[0]?.image_url;
-        const oldMediaUrl = rows[0]?.media_url;
+    // 1. Ambil semua data yang relevan dari request
+    const { title, content } = req.body;
+    
+    // Ambil urutan baru dari slide lama (ini adalah string, perlu di-parse)
+    const newlyOrderedOldSlides = req.body.existing_slides ? JSON.parse(req.body.existing_slides) : [];
+    
+    // Ambil file baru yang diunggah
+    const newImageFile = req.files.image?.[0];
+    const newSlideFiles = req.files.slides?.map(file => file.filename) || [];
 
-        let newImageUrl = oldImage;
-        let newMediaUrl = oldMediaUrl;
-        
-        // Hapus file lama jika ada unggahan gambar baru
-        if (image_file) {
-            newImageUrl = image_file.filename;
-            if (oldImage) {
-                const oldPath = path.join(__dirname, '..', '..', 'public', 'assets', 'images', oldImage);
-                if (fs.existsSync(oldPath)) {
-                    fs.unlink(oldPath, err => {
-                        if (err) console.error("Error menghapus file lama:", err);
-                    });
-                }
-            }
-        }
+    // Query untuk mengambil data lama dari database
+    connection.query("SELECT image_url, media_url FROM posts WHERE id = ?", [postId], (err, rows) => {
+        if (err || rows.length === 0) {
+            console.error("Error fetching old post data:", err);
+            return res.status(500).send({ message: "Error mengambil data postingan lama." });
+        }
+        
+        const oldData = rows[0];
+        let newImageUrl = oldData.image_url;
 
-        // Jika ada unggahan slide baru, hapus slide lama dan simpan yang baru
-        if (slides) {
-            if (oldMediaUrl) {
-                try {
-                    const oldSlides = JSON.parse(oldMediaUrl);
-                    if (Array.isArray(oldSlides)) {
-                        oldSlides.forEach(slide => {
-                            const oldPath = path.join(__dirname, '..', '..', 'public', 'assets', 'images', slide);
-                            if (fs.existsSync(oldPath)) {
-                                fs.unlink(oldPath, err => {
-                                    if (err) console.error("Error menghapus file slide lama:", err);
-                                });
-                            }
-                        });
-                    }
-                } catch(e) { /* Abaikan jika bukan JSON array */ }
-            }
-            newMediaUrl = JSON.stringify(slides);
-        } else if (media_url !== undefined) {
-            newMediaUrl = media_url;
-        }
+        // 2. Logika untuk menggabungkan slide lama dan baru
+        const finalSlides = [...newlyOrderedOldSlides, ...newSlideFiles];
+        const newMediaUrl = finalSlides.length > 0 ? JSON.stringify(finalSlides) : null;
 
-        connection.query(
-            "UPDATE posts SET title = ?, content = ?, image_url = ?, media_url = ? WHERE id = ?",
-            [title, content, newImageUrl, newMediaUrl, postId],
-            (err2, result) => {
-                if (err2) {
-                    console.error("Error update post:", err2);
-                    return res.status(500).send({ message: "Error memperbarui postingan." });
-                }
-                if (result.affectedRows === 0) {
-                    return res.status(404).send({ message: "Postingan tidak ditemukan." });
-                }
-                res.send({
-                    message: "Postingan berhasil diperbarui!",
-                    image_url: newImageUrl,
-                    media_url: newMediaUrl,
-                });
-            }
-        );
-    });
+        // 3. Logika untuk menghapus file lama yang tidak terpakai
+        // Hapus thumbnail lama jika ada yang baru
+        if (newImageFile) {
+            newImageUrl = newImageFile.filename;
+            if (oldData.image_url) {
+                const oldImagePath = path.join(uploadDir, oldData.image_url);
+                if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+            }
+        }
+
+        // Hapus file slide lama yang sudah tidak ada di daftar baru
+        if (oldData.media_url) {
+            try {
+                const oldSlides = JSON.parse(oldData.media_url);
+                if (Array.isArray(oldSlides)) {
+                    const slidesToDelete = oldSlides.filter(oldSlide => !newlyOrderedOldSlides.includes(oldSlide));
+                    slidesToDelete.forEach(slideName => {
+                        const oldSlidePath = path.join(uploadDir, slideName);
+                        if (fs.existsSync(oldSlidePath)) fs.unlinkSync(oldSlidePath);
+                    });
+                }
+            } catch (e) { /* Abaikan jika bukan JSON */ }
+        }
+
+        // 4. Update database dengan semua data yang sudah benar
+        connection.query(
+            "UPDATE posts SET title = ?, content = ?, image_url = ?, media_url = ? WHERE id = ?",
+            [title, content, newImageUrl, newMediaUrl, postId],
+            (err2, result) => {
+                if (err2) {
+                    console.error("Error updating post:", err2);
+                    return res.status(500).send({ message: "Error memperbarui postingan." });
+                }
+                res.send({ message: "Postingan berhasil diperbarui!" });
+            }
+        );
+    });
 };
 
 exports.delete = (req, res) => {

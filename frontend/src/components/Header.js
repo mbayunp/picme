@@ -13,11 +13,18 @@ function Header() {
         "/": "HOMEPAGE",
         "/portfolio": "PORTFOLIO",
         "/services": "SERVICES",
-        "/newsletter": "NEWSLETTER",
+        "/newsletter": "NEWSLETTER", // Ganti menjadi /blog jika path Anda adalah /blog
         "/contact": "CONTACT",
     };
 
-    const pageName = pageTitles[location.pathname] || "PAGE";
+    // Menangani path dinamis seperti /blog/:id
+    let pageName = "PAGE";
+    if (pageTitles[location.pathname]) {
+        pageName = pageTitles[location.pathname];
+    } else if (location.pathname.startsWith('/blog/')) {
+        pageName = "NEWSLETTER"; // Atau "BLOG DETAIL"
+    }
+
 
     useEffect(() => {
         const onScroll = () => {
@@ -29,7 +36,6 @@ function Header() {
         };
         
         window.addEventListener("scroll", onScroll);
-        // Clean up the event listener
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
@@ -47,26 +53,17 @@ function Header() {
             {/* HEADER */}
             {!scrolled ? (
                 // --- Header awal sebelum scroll ---
-                <header className="fixed top-0 left-0 w-full bg-white shadow z-50 flex justify-between items-center px-6 md:px-10 py-4">
+                <header className="fixed top-0 left-0 w-full bg-white shadow z-50 flex justify-between items-center px-4 md:px-10 py-3">
                     <Link to="/">
-                        <img src={logo} alt="Pictme logo" className="h-16 w-auto" />
+                        {/* PERBAIKAN: Ukuran logo disesuaikan untuk mobile dan desktop */}
+                        <img src={logo} alt="Pictme logo" className="h-12 md:h-16 w-auto" />
                     </Link>
                     <nav className="hidden md:flex gap-6 font-semibold text-gray-800">
-                        <Link to="/" className="hover:text-blue-500 transition-colors">
-                            Homepage
-                        </Link>
-                        <Link to="/portfolio" className="hover:text-blue-500 transition-colors">
-                            Portfolio
-                        </Link>
-                        <Link to="/services" className="hover:text-blue-500 transition-colors">
-                            Services
-                        </Link>
-                        <Link to="/newsletter" className="hover:text-blue-500 transition-colors">
-                            Newsletter
-                        </Link>
-                        <Link to="/contact" className="hover:text-blue-500 transition-colors">
-                            Contact
-                        </Link>
+                        <Link to="/" className="hover:text-blue-500 transition-colors">Homepage</Link>
+                        <Link to="/portfolio" className="hover:text-blue-500 transition-colors">Portfolio</Link>
+                        <Link to="/services" className="hover:text-blue-500 transition-colors">Services</Link>
+                        <Link to="/newsletter" className="hover:text-blue-500 transition-colors">Newsletter</Link>
+                        <Link to="/contact" className="hover:text-blue-500 transition-colors">Contact</Link>
                     </nav>
                     <button
                         aria-label="Open menu"
@@ -74,57 +71,41 @@ function Header() {
                         className="md:hidden p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300"
                     >
                         <svg className="w-8 h-8 text-teal-500" viewBox="0 0 24 24" fill="none">
-                            <path
-                                d="M4 6h16M4 12h16M4 18h16"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
+                            <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </button>
                 </header>
             ) : (
                 // --- Header setelah scroll ---
                 <>
-                    <div className="fixed top-6 left-12 z-50">
+                    {/* PERBAIKAN: Posisi dan ukuran logo disesuaikan untuk mobile */}
+                    <div className="fixed top-4 left-4 md:top-6 md:left-12 z-50">
                         <Link to="/">
-                            <img src={logo3} alt="Pictme logo scrolled" className="h-20 w-auto" />
+                            <img src={logo3} alt="Pictme logo scrolled" className="h-16 md:h-20 w-auto" />
                         </Link>
                     </div>
+
                     <button
                         aria-label={isOpen ? "Close menu" : "Open menu"}
                         onClick={() => setIsOpen((s) => !s)}
-                        className="fixed top-6 right-6 z-50 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300"
+                        // PERBAIKAN: Posisi tombol menu disesuaikan untuk mobile
+                        className="fixed top-4 right-4 md:top-6 md:right-6 z-50 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-300"
                     >
                         {!isOpen ? (
                             <svg className="w-8 h-8 text-teal-500" viewBox="0 0 24 24" fill="none">
-                                <path
-                                    d="M4 6h16M4 12h16M4 18h16"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
+                                <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         ) : (
                             <svg className="w-8 h-8 text-teal-500" viewBox="0 0 24 24" fill="none">
-                                <path
-                                    d="M6 6l12 12M6 18L18 6"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
+                                <path d="M6 6l12 12M6 18L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         )}
                     </button>
                     <div
-                        className={`fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-40 transform transition-transform duration-300
-                            ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+                        className={`fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-40 transform transition-transform duration-300 ${isOpen ? "translate-x-0" : "translate-x-full"}`}
                     >
                         <div className="p-6 flex flex-col h-full">
-                            <nav className="flex-1 flex flex-col gap-4 text-gray-800 font-semibold">
+                            <nav className="flex-1 flex flex-col gap-4 text-gray-800 font-semibold pt-16">
                                 <Link to="/" onClick={() => setIsOpen(false)}>Homepage</Link>
                                 <Link to="/portfolio" onClick={() => setIsOpen(false)}>Portfolio</Link>
                                 <Link to="/services" onClick={() => setIsOpen(false)}>Services</Link>
@@ -140,19 +121,18 @@ function Header() {
             )}
 
             {/* Nama halaman kiri bawah */}
-            <div className="fixed left-12 bottom-24 z-40">
-                <span className="block transform -rotate-90 origin-left text-sm font-semibold text-gray-700 tracking-wider px-4">
+            {/* PERBAIKAN: Posisi dan rotasi disesuaikan agar tidak tumpang tindih */}
+            <div className="fixed left-11 md:left-11 bottom-6 z-40">
+                <span className="block origin-bottom-left md:origin-left transform -rotate-90 md:-rotate-90 text-sm font-semibold text-gray-700 tracking-wider">
                     {pageName}
                 </span>
             </div>
 
+
             {/* Scroll to top kanan bawah */}
-            {/* ✅ LOGIKA UNTUK MENAMPILKAN TOMBOL HANYA DI BAGIAN BAWAH */}
             <button
                 onClick={scrollToTop}
-                className={`fixed right-4 bottom-6 z-50 flex flex-col items-center gap-2 focus:outline-none transition-opacity duration-300 ${
-                    isAtBottom ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                }`}
+                className={`fixed right-4 bottom-6 z-50 flex flex-col items-center gap-2 focus:outline-none transition-opacity duration-300 ${isAtBottom ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 aria-label="Back to top"
             >
                 <span className="text-sm text-teal-500 font-medium">
@@ -160,13 +140,7 @@ function Header() {
                 </span>
                 <span className="w-10 h-10 flex items-center justify-center rounded-full border border-teal-500 text-teal-500">
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                        <path
-                            d="M12 19V6M5 13l7-7 7 7"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
+                        <path d="M12 19V6M5 13l7-7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 </span>
             </button>
