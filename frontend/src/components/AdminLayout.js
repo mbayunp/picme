@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaSignOutAlt, FaTachometerAlt, FaCalendarAlt, FaUsers, FaImage, FaCameraRetro, FaChartLine, FaEnvelope, FaBullhorn } from 'react-icons/fa'; // ✅ IMPORT BARU
+import { FaSignOutAlt, FaTachometerAlt, FaCalendarAlt, FaUsers, FaImage, FaCameraRetro, FaChartLine, FaEnvelope, FaBullhorn } from 'react-icons/fa';
 
 const AdminLayout = ({ activeTab, setActiveTab, children }) => {
     return (
@@ -15,6 +15,16 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                     </div>
                     <nav>
                         <ul>
+                            {/* ✅ MENU BERANDA DITAMBAHKAN DI SINI */}
+                            <li className="mb-2">
+                                <button
+                                    onClick={() => setActiveTab('beranda')}
+                                    className={`w-full text-left flex items-center p-3 rounded-lg transition-colors duration-200 ${activeTab === 'beranda' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'}`}
+                                >
+                                    <FaTachometerAlt className="mr-3" /> Beranda
+                                </button>
+                            </li>
+
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('bookings')}
@@ -28,7 +38,8 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     onClick={() => setActiveTab('bookings-data')}
                                     className={`w-full text-left flex items-center p-3 rounded-lg transition-colors duration-200 ${activeTab === 'bookings-data' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'}`}
                                 >
-                                    <FaTachometerAlt className="mr-3" /> Data Booking
+                                    {/* Mengubah ikon agar tidak sama dengan Beranda */}
+                                    <FaChartLine className="mr-3" /> Data Booking
                                 </button>
                             </li>
                             <li className="mb-2">
@@ -39,7 +50,6 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaUsers className="mr-3" /> Data Pelanggan
                                 </button>
                             </li>
-                            {/* ✅ MENU PENGUMUMAN BARU */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('announcements')}

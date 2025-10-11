@@ -18,7 +18,7 @@ function ServicesPage() {
     };
 
     const [step, setStep] = useState(0);
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(null);
     const [selectedStudio, setSelectedStudio] = useState(null);
     const [weekStartDate, setWeekStartDate] = useState(getMonday(new Date()));
     const [dateMode, setDateMode] = useState("week");
@@ -192,6 +192,10 @@ function ServicesPage() {
                 waktu_durasi: firstPackage.waktu_durasi
             });
 
+            if (!selectedDate) {
+            setSelectedDate(new Date()); 
+        }
+
             setStep(2);
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
@@ -354,14 +358,16 @@ function ServicesPage() {
                                     </button>
                                 </div>
                             </div>
-                            
                             {isCartOpen && (
                                 <div className="p-4 border-t">
-                                    <p className="text-sm font-semibold">Tanggal Appointment</p>
-                                    <p className="text-lg font-bold text-green-600">
-                                        {selectedDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
-                                    </p>
-                                    
+                                    {selectedDate && (
+                                        <>
+                                            <p className="text-sm font-semibold">Tanggal Appointment</p>
+                                            <p className="text-lg font-bold text-green-600">
+                                                {selectedDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
+                                            </p>
+                                        </>
+                                    )}
                                     <div className="mt-2 space-y-2">
                                         {cart.map(item => (
                                             <div key={item.id} className="flex items-center justify-between text-gray-700">

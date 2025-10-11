@@ -1,5 +1,5 @@
 import React from 'react';
-
+import moment from 'moment';
 const Step2_SelectDateTime = ({ selectedStudio, selectedDate, availableSlots, loadingSlots, dateMode, onBack, onContinue, onSelectDate, onSelectSlot, onSetDateMode, onPrevWeek, onNextWeek, getWeekDays, getDayName, formData, selectedPackage }) => {
     const packageDuration = selectedPackage?.waktu_durasi || 10;
 
@@ -80,8 +80,7 @@ const Step2_SelectDateTime = ({ selectedStudio, selectedDate, availableSlots, lo
                         <input
                             type="date"
                             value={selectedDate.toISOString().split("T")[0]}
-                            onChange={(e) => onSelectDate(new Date(e.target.value))}
-                            className="border px-4 py-2 rounded-lg shadow-sm"
+                            onChange={(e) => onSelectDate(moment(e.target.value, "YYYY-MM-DD").toDate())}
                         />
                     </div>
                 )}

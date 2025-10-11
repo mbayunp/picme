@@ -217,11 +217,11 @@ function HomePage() {
             <section className="bg-[#0d1a2c] text-white min-h-screen flex items-center px-4 sm:px-12 relative overflow-hidden">
                 <LiquidBlobAnimation />
                 <div className="max-w-7xl mx-auto z-10 w-full relative">
-                    <h1 className="text-5xl sm:text-7xl font-bold leading-tight mb-6">
+                    <h1 className="text-7xl sm:text-7xl font-bold leading-tight mb-6">
                         <span className="block">Taking Some Happiness</span>
                         <span className="block text-[#b3e6ff]">Smile Today</span>
                     </h1>
-                    <p className="text-gray-300 mb-8 max-w-2xl">
+                    <p className="text-gray-300 text-3xl mb-8 max-w-5xl">
                         Welcome to a world of joy, passion, and boundless creativity. Together, let's create #ceritahariini and embark on an extraordinary journey where dreams come true.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4">
@@ -257,9 +257,15 @@ function HomePage() {
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center justify-center mt-8 md:mt-0">
-                        <img src="/images/poster1.jpg" alt="Poster Studio" className="w-full max-w-sm sm:max-w-md h-auto object-cover mx-auto rounded-lg"/>
-                    </div>
+                    <div className="flex items-center justify-center mt-8 md:mt-0">     
+    <div className="w-full aspect-square overflow-hidden rounded-lg shadow-lg">
+        <img 
+            src="/images/poster1.jpg" 
+            alt="Poster Studio" 
+            className="w-full h-full object-cover object-center" 
+        />
+    </div>
+</div>
                 </div>
             </section>
 

@@ -56,7 +56,7 @@ function Header() {
                 <header className="fixed top-0 left-0 w-full bg-white shadow z-50 flex justify-between items-center px-4 md:px-10 py-3">
                     <Link to="/">
                         {/* PERBAIKAN: Ukuran logo disesuaikan untuk mobile dan desktop */}
-                        <img src={logo} alt="Pictme logo" className="h-12 md:h-16 w-auto" />
+                        <img src={logo} alt="Pictme logo" className="h-16 md:h-20 w-auto" />
                     </Link>
                     <nav className="hidden md:flex gap-6 font-semibold text-gray-800">
                         <Link to="/" className="hover:text-blue-500 transition-colors">Homepage</Link>

@@ -13,7 +13,9 @@ import PortfolioManager from '../components/dashboard/PortfolioManager';
 import CustomerDetail from '../components/dashboard/CustomerDetail';
 import FinancialReport from '../components/dashboard/FinancialReport';
 import ContactMessages from '../components/dashboard/ContactMessages';
-import AnnouncementManager from '../components/dashboard/AnnouncementManager'; // ✅ IMPORT BARU
+import AnnouncementManager from '../components/dashboard/AnnouncementManager';
+import Beranda from '../components/dashboard/Beranda';
+
 
 const Modal = ({ title, message, onConfirm, onCancel }) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
@@ -36,7 +38,7 @@ const Modal = ({ title, message, onConfirm, onCancel }) => (
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('customers');
+    const [activeTab, setActiveTab] = useState('beranda');
     const [selectedStudio, setSelectedStudio] = useState('1'); 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
 
@@ -55,6 +57,8 @@ const AdminDashboard = () => {
         switch (activeTab) {
             case 'posts':
                 return <PostsManager posts={posts} fetchPosts={fetchPosts} showModal={showModal} handleDelete={handleDelete} />;
+            case 'beranda':
+                return <Beranda bookings={sortedBookings} studios={studios} />;
             case 'packages':
                 return <PackagesManager packages={packages} fetchPackages={fetchPackages} showModal={showModal} handleDelete={handleDelete} />;
             case 'bookings':

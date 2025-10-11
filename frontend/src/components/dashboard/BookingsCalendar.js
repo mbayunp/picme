@@ -16,15 +16,19 @@ const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio
     const [showEventModal, setShowEventModal] = useState(false);
 
     useEffect(() => {
-        // ✅ PERBAIKAN: Periksa apakah 'bookings' adalah array sebelum memetakan
         if (!Array.isArray(bookings) || bookings.length === 0) {
             setEvents([]);
             return;
         }
 
         const calendarEvents = bookings.map(booking => {
-            const start = moment(`${booking.tanggal} ${booking.waktu_mulai}`, 'YYYY-MM-DD HH:mm').toDate();
-            const end = moment(`${booking.tanggal} ${booking.waktu_selesai}`, 'YYYY-MM-DD HH:mm').toDate();
+            const bookingDate = moment(booking.tanggal);
+
+            const [startHour, startMinute] = booking.waktu_mulai.split(':').map(Number);
+            const [endHour, endMinute] = booking.waktu_selesai.split(':').map(Number);
+
+            const start = bookingDate.clone().hour(startHour).minute(startMinute).second(0).toDate();
+            const end = bookingDate.clone().hour(endHour).minute(endMinute).second(0).toDate();
 
             const pkgName = booking.package_name || 'Tanpa Paket';
             let title = `${booking.nama} - ${pkgName}`;
@@ -85,7 +89,7 @@ const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio
         };
     };
 
-    const currentStudioName = studios.find(s => s.id === selectedStudio)?.name || 'Pilih Studio';
+    const currentStudioName = studios.find(s => String(s.id) === String(selectedStudio))?.name || 'Pilih Studio';
     
     const formats = {
         timeGutterFormat: 'HH:mm',
