@@ -3,6 +3,9 @@ import { FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 import { MdOutlineAccessTime } from 'react-icons/md';
 import axios from 'axios';
 
+// ✅ PERBAIKAN: Tambahkan variabel lingkungan untuk URL API
+const API_URL = process.env.REACT_APP_API_URL;
+
 function ContactPage() {
     const [formData, setFormData] = useState({
         name: '',
@@ -19,7 +22,8 @@ function ContactPage() {
         e.preventDefault();
         setStatusMessage('');
         try {
-            const response = await axios.post('http://localhost:8080/api/contact', formData);
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+            const response = await axios.post(`${API_URL}/api/contact`, formData);
             setStatusMessage('Pesan Anda telah terkirim!');
             setFormData({ name: '', email: '', message: '' }); // Reset form
         } catch (error) {
@@ -39,12 +43,10 @@ function ContactPage() {
             </div>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-12 max-w-6xl mx-auto">
-                {/* Formulir Kontak */}
                 <div className="bg-white p-10 rounded-xl shadow-2xl transform transition-transform duration-300 border border-gray-200">
                     <h2 className="text-3xl font-bold mb-8 text-gray-800">Kirim Pesan</h2>
                     {statusMessage && (
                         <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${
-                            // ✅ PERBAIKI: Ganti kondisi untuk pesan sukses menjadi spesifik
                             statusMessage === 'Pesan Anda telah terkirim!' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                         }`}>
                             {statusMessage}
@@ -99,7 +101,6 @@ function ContactPage() {
                     </form>
                 </div>
 
-                {/* Informasi Kontak */}
                 <div className="bg-white p-10 rounded-xl shadow-2xl transform transition-transform duration-300 border border-gray-200">
                     <h2 className="text-3xl font-bold mb-8 text-gray-800">Informasi Kontak</h2>
                     <div className="space-y-6 text-gray-700">

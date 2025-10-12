@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// ✅ Tambahkan variabel lingkungan untuk URL API
+const API_URL = process.env.REACT_APP_API_URL;
+
 const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) => {
     const [newPackage, setNewPackage] = useState({ nama_paket: '', harga: '', deskripsi_paket: '', studio_name: '' });
     const [imageFile, setImageFile] = useState(null);
@@ -38,8 +41,8 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
         } else {
             const oldPackage = packages.find(p => p.id === currentPackageId);
             if (oldPackage) {
-                // ✅ PERBAIKI: Hapus duplikasi path dari sini juga
-                setPreviewUrl(`http://localhost:8080/${oldPackage.image_url}`);
+                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                setPreviewUrl(`${API_URL}/${oldPackage.image_url}`);
             } else {
                 setPreviewUrl('');
             }
@@ -63,7 +66,8 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
                         'x-access-token': token
                     },
                 };
-                const uploadRes = await axios.post('http://localhost:8080/api/upload', uploadFormData, uploadConfig);
+                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                const uploadRes = await axios.post(`${API_URL}/api/upload`, uploadFormData, uploadConfig);
                 imageUrl = uploadRes.data.imageUrl;
             }
     
@@ -88,14 +92,16 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
             };
     
             if (isEditing) {
-                await axios.put(`http://localhost:8080/api/packages/${currentPackageId}`, finalFormData, packageConfig);
+                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                await axios.put(`${API_URL}/api/packages/${currentPackageId}`, finalFormData, packageConfig);
                 showModal('Berhasil', 'Paket berhasil diperbarui!');
             } else {
                 if (!imageUrl) {
                     showModal('Gagal', 'Silakan unggah gambar untuk paket baru.');
                     return;
                 }
-                await axios.post('http://localhost:8080/api/packages', finalFormData, packageConfig);
+                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                await axios.post(`${API_URL}/api/packages`, finalFormData, packageConfig);
                 showModal('Berhasil', 'Paket berhasil ditambahkan!');
             }
     
@@ -117,8 +123,8 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
             studio_name: pkg.studio_name
         });
         
-        // ✅ PERBAIKI: Hapus duplikasi path dari sini
-        setPreviewUrl(`http://localhost:8080/${pkg.image_url}`);
+        // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+        setPreviewUrl(`${API_URL}/${pkg.image_url}`);
         setImageFile(null);
     };
 
@@ -130,7 +136,6 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
         ? packages
         : packages.filter(pkg => pkg.studio_name === selectedStudio);
     
-    // Perbaikan agar harga tetap diformat saat form diedit
     const formatPrice = (price) => {
         return price ? price.toLocaleString('id-ID') : '';
     };
@@ -220,8 +225,8 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
                         <div key={pkg.id} className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between">
                             {pkg.image_url && (
                                 <img
-                                    // ✅ PERBAIKI: Hapus duplikasi path di sini
-                                    src={`http://localhost:8080/${pkg.image_url}`}
+                                    // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                                    src={`${API_URL}/${pkg.image_url}`}
                                     alt={pkg.nama_paket}
                                     className="w-24 h-24 object-cover rounded-md mr-4"
                                 />

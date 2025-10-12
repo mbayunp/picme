@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
+// ✅ PERBAIKAN: Tambahkan variabel lingkungan untuk URL API
+const API_URL = process.env.REACT_APP_API_URL;
+
 function NewsletterPage() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -9,7 +12,8 @@ function NewsletterPage() {
     useEffect(() => {
         const fetchPosts = async () => {
             try {
-                const response = await axios.get('http://localhost:8080/api/posts');
+                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                const response = await axios.get(`${API_URL}/api/posts`);
                 setPosts(response.data);
             } catch (error) {
                 console.error('Error fetching posts:', error);
@@ -21,23 +25,21 @@ function NewsletterPage() {
     }, []);
 
     const getThumbnailUrl = (post) => {
-        // Cek jika ada image_url (gambar tunggal/thumbnail video)
         if (post.image_url) {
-            return `http://localhost:8080/assets/images/${post.image_url}`;
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+            return `${API_URL}/assets/images/${post.image_url}`;
         }
         
-        // Cek jika media_url adalah array (gambar slide) dan ambil gambar pertama
         if (Array.isArray(post.media_url) && post.media_url.length > 0) {
-            return `http://localhost:8080/assets/images/${post.media_url[0]}`;
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+            return `${API_URL}/assets/images/${post.media_url[0]}`;
         }
         
-        // Jika tidak ada gambar yang ditemukan, kembalikan placeholder
         return 'https://placehold.co/800x600/D1D5DB/1F2937?text=No+Image';
     };
 
     return (
         <div className="font-sans text-gray-900 bg-white min-h-screen pt-24">
-            {/* Header Utama */}
             <div className="max-w-screen-xl mx-auto px-5 mb-16">
                 <h1 className="text-6xl md:text-7xl font-light leading-none">
                     <span className="font-bold">Our latest</span> Stories & News
@@ -50,7 +52,6 @@ function NewsletterPage() {
                 </div>
             </div>
             
-            {/* Grid Postingan */}
             <div className="max-w-screen-xl mx-auto px-5">
                 {loading ? (
                     <div className="text-center text-gray-500">Memuat postingan...</div>

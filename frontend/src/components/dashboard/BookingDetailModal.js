@@ -1,5 +1,3 @@
-// src/components/dashboard/BookingDetailModal.jsx
-
 import React, { useState } from 'react';
 import moment from 'moment';
 import {
@@ -62,29 +60,22 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
         }
     };
 
-    // ✅ Fungsi untuk memformat nomor WhatsApp
     const formatWhatsAppNumber = (number) => {
         if (!number) return null;
-        // Hapus karakter non-digit
         const cleanNumber = number.replace(/\D/g, '');
-        // Ganti '0' di depan dengan '62'
         if (cleanNumber.startsWith('0')) {
             return `62${cleanNumber.substring(1)}`;
         }
         return cleanNumber;
     };
     
-    // Logika pengambilan harga yang sudah benar
     const totalHarga = eventData.package_price || 0;
     
-    // Hitung durasi dari waktu mulai dan waktu selesai
     const startMoment = moment(eventData.waktu_mulai, 'HH:mm:ss');
     const endMoment = moment(eventData.waktu_selesai, 'HH:mm:ss');
     const duration = endMoment.diff(startMoment, 'minutes') || 0;
     
-    // Format nomor WhatsApp untuk URL
     const formattedWaNumber = formatWhatsAppNumber(eventData.nomor_whatsapp);
-    // Buat URL WhatsApp dengan pesan dinamis
     const waUrl = formattedWaNumber 
         ? `https://wa.me/${formattedWaNumber}?text=Halo%20${encodeURIComponent(eventData.nama)}%2C%20saya%20admin%20Picme%20Photo%20Studio%20ingin%20mengkonfirmasi%20pemesanan%20Anda%20pada%20tanggal%20${moment(eventData.tanggal).format('DD%20MMM%20YYYY')}.`
         : '#';
@@ -113,7 +104,6 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                         </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                        {/* ✅ PERBAIKI: Menggunakan tag <a> dengan URL WhatsApp */}
                         <a
                             href={waUrl}
                             target="_blank"
@@ -165,7 +155,8 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                         <div className="flex items-center space-x-2">
                             {eventData.image_url ? (
                                 <img
-                                    src={`http://localhost:8080/${eventData.image_url}`}
+                                    // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                                    src={`${process.env.REACT_APP_API_URL}/${eventData.image_url}`}
                                     onError={(e) => {
                                         e.target.onerror = null;
                                         e.target.src = 'https://placehold.co/64x64/ccc/999?text=Paket';

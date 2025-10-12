@@ -13,6 +13,9 @@ const BookingModal = ({
     if (!showModal) {
         return null;
     }
+    
+    // ✅ Tambahkan variabel lingkungan untuk URL API
+    const API_URL = process.env.REACT_APP_API_URL;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black bg-opacity-40 p-4">
@@ -40,7 +43,8 @@ const BookingModal = ({
                 {selectedModalPackage && (
                     <div className="mb-4 flex justify-center">
                         <img
-                            src={`http://localhost:8080/${selectedModalPackage.image_url}`}
+                            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                            src={`${API_URL}/${selectedModalPackage.image_url}`}
                             alt={selectedModalPackage.nama_paket}
                             className="h-64 w-full rounded-lg bg-gray-100 object-contain"
                         />
@@ -81,7 +85,8 @@ const BookingModal = ({
                                         />
                                         {pkg.image_url && (
                                             <img
-                                                src={`http://localhost:8080/${pkg.image_url}`}
+                                                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                                                src={`${API_URL}/${pkg.image_url}`}
                                                 alt={pkg.nama_paket}
                                                 className="h-16 w-16 rounded-lg bg-gray-50 object-contain"
                                             />

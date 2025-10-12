@@ -7,6 +7,9 @@ import Step1_SelectPackage from "../components/services/Step1_SelectPackage";
 import Step2_SelectDateTime from "../components/services/Step2_SelectDateTime";
 import BookingModal from "../components/services/BookingModal";
 
+// ✅ PERBAIKAN: Tambahkan variabel lingkungan untuk URL API
+const API_URL = process.env.REACT_APP_API_URL;
+
 function ServicesPage() {
     const getMonday = (d) => {
         const date = new Date(d);
@@ -77,7 +80,8 @@ function ServicesPage() {
     const fetchPackages = async (studioName) => {
         setLoadingPackages(true);
         try {
-            const response = await axios.get(`http://localhost:8080/api/packages?studio_name=${encodeURIComponent(studioName)}`);
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+            const response = await axios.get(`${API_URL}/api/packages?studio_name=${encodeURIComponent(studioName)}`);
             const formattedPackages = response.data.map((pkg) => ({
                 ...pkg,
                 id: parseInt(pkg.id, 10),
@@ -121,8 +125,9 @@ function ServicesPage() {
         setLoadingSlots(true);
         try {
             const formattedDate = date.toISOString().split("T")[0];
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
             const response = await axios.get(
-                `http://localhost:8080/api/services/slots?date=${formattedDate}&studio=${studio}`
+                `${API_URL}/api/services/slots?date=${formattedDate}&studio=${studio}`
             );
             setAvailableSlots({
                 pagi: normalizeSlots(response.data.pagi || []),
@@ -209,7 +214,6 @@ function ServicesPage() {
         setIsCartOpen(!isCartOpen);
     };
 
-    // ✅ PERBAIKAN: Ubah parameter dari `e` menjadi `data`
     const handleSubmit = async (data) => {
         setMessage("");
 
@@ -244,7 +248,8 @@ function ServicesPage() {
         };
 
         try {
-            await axios.post("http://localhost:8080/api/services", bookingData);
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+            await axios.post(`${API_URL}/api/services`, bookingData);
 
             setMessage("Pemesanan berhasil!");
             setStep(0);

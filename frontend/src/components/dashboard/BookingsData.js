@@ -1,12 +1,12 @@
-// src/components/dashboard/BookingsData.jsx
-
 import React, { useState } from 'react';
 import axios from 'axios';
 import moment from 'moment';
 import BookingDetailModal from './BookingDetailModal';
 
+// ✅ Tambahkan variabel lingkungan
+const API_URL = process.env.REACT_APP_API_URL;
+
 const BookingsData = ({
-    // ✅ PERBAIKAN: Mengganti nama prop bookings menjadi sortedBookings
     sortedBookings,
     packages,
     studios,
@@ -97,7 +97,8 @@ const BookingsData = ({
                 jumlah_orang: parseInt(bookingForm.jumlah_orang, 10) || 1,
                 status: bookingForm.status
             };
-            await axios.put(`http://localhost:8080/api/services/${currentBooking.id}`, payload, config);
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+            await axios.put(`${API_URL}/api/services/${currentBooking.id}`, payload, config);
             showModal('Berhasil', 'Pemesanan berhasil diperbarui!');
             setIsEditingBooking(false);
             setCurrentBooking(null);
@@ -142,7 +143,6 @@ const BookingsData = ({
         }
     };
 
-    // ✅ PERBAIKAN: Gunakan sortedBookings sebagai sumber data dan tambahkan validasi
     const dataToDisplay = sortedBookings || [];
 
     const renderPagination = () => {

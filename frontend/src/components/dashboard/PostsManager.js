@@ -27,6 +27,9 @@ const VideoEmbed = ({ url }) => {
     );
 };
 
+// ✅ Tambahkan variabel lingkungan untuk URL API
+const API_URL = process.env.REACT_APP_API_URL;
+
 const PostsManager = ({ posts, fetchPosts, showModal, handleDelete }) => {
     const [newPost, setNewPost] = useState({ title: '', content: '', postType: 'single-image', mediaUrl: '' });
     const [imageFile, setImageFile] = useState(null);
@@ -38,7 +41,7 @@ const PostsManager = ({ posts, fetchPosts, showModal, handleDelete }) => {
 
     // Menggabungkan semua URL untuk pratinjau di satu tempat
     const combinedPreviewUrls = [
-        ...existingSlides.map(url => `http://localhost:8080/assets/images/${url}`),
+        ...existingSlides.map(url => `${API_URL}/assets/images/${url}`), // ✅ PERBAIKAN
         ...slideFiles.map(file => URL.createObjectURL(file))
     ];
 
@@ -99,7 +102,6 @@ const PostsManager = ({ posts, fetchPosts, showModal, handleDelete }) => {
                 slideFiles.forEach(file => {
                     formData.append('slides', file); 
                 });
-                // Kirim urutan slide yang sudah ada
                 formData.append('existing_slides', JSON.stringify(existingSlides));
             }
 
@@ -110,7 +112,6 @@ const PostsManager = ({ posts, fetchPosts, showModal, handleDelete }) => {
                 }
             };
 
-            // Validasi sebelum mengirim
             if (!isEditing) {
                 if ((newPost.postType === 'single-image' || newPost.postType === 'video-with-thumbnail') && !imageFile) {
                     showModal('Gagal', 'Silakan unggah gambar utama atau thumbnail.');
@@ -127,10 +128,12 @@ const PostsManager = ({ posts, fetchPosts, showModal, handleDelete }) => {
             }
 
             if (isEditing) {
-                await axios.put(`http://localhost:8080/api/posts/${currentPostId}`, formData, config);
+                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                await axios.put(`${API_URL}/api/posts/${currentPostId}`, formData, config);
                 showModal('Berhasil', 'Postingan berhasil diperbarui!');
             } else {
-                await axios.post('http://localhost:8080/api/posts', formData, config);
+                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                await axios.post(`${API_URL}/api/posts`, formData, config);
                 showModal('Berhasil', 'Postingan berhasil ditambahkan!');
             }
 
@@ -348,8 +351,9 @@ const PostsManager = ({ posts, fetchPosts, showModal, handleDelete }) => {
                 {posts.map(post => (
                     <div key={post.id} className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between flex-wrap gap-4">
                         {post.image_url && (
+                            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
                             <img
-                                src={`http://localhost:8080/assets/images/${post.image_url}`}
+                                src={`${API_URL}/assets/images/${post.image_url}`}
                                 alt={post.title}
                                 className="w-20 h-20 object-cover rounded-md"
                             />

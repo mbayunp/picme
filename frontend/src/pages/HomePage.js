@@ -5,6 +5,8 @@ import InitialBanner from "../components/InitialBanner";
 import { FaChevronLeft, FaChevronRight, FaQuoteLeft } from 'react-icons/fa';
 import { useState, useEffect, useRef } from 'react';
 
+// ✅ PERBAIKAN: Tambahkan variabel lingkungan untuk URL API
+const API_URL = process.env.REACT_APP_API_URL;
 
 // Komponen Liquid Blob
 const LiquidBlobAnimation = () => {
@@ -129,7 +131,8 @@ function HomePage() {
     useEffect(() => {
         const fetchPosts = async () => {
             try {
-                const response = await axios.get("http://localhost:8080/api/posts");
+                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                const response = await axios.get(`${API_URL}/api/posts`);
                 setPosts(response.data.slice(0, 4));
             } catch (error) {
                 console.error("Error fetching posts:", error);
@@ -141,7 +144,8 @@ function HomePage() {
         
         const fetchBanners = async () => {
             try {
-                const response = await axios.get(`http://localhost:8080/api/announcements`); 
+                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                const response = await axios.get(`${API_URL}/api/announcements`); 
                 const data = response.data || [];
                 setBannerData(data);
                 
@@ -168,11 +172,13 @@ function HomePage() {
 
     const getThumbnailUrl = (post) => {
         if (post.image_url) {
-            return `http://localhost:8080/assets/images/${post.image_url}`;
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+            return `${API_URL}/assets/images/${post.image_url}`;
         }
         if (Array.isArray(post.media_url) && post.media_url.length > 0) {
             const firstImage = post.media_url[0];
-            return `http://localhost:8080/assets/images/${firstImage}`;
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+            return `${API_URL}/assets/images/${firstImage}`;
         }
         return 'https://placehold.co/800x600/D1D5DB/1F2937?text=No+Image';
     };
@@ -257,15 +263,15 @@ function HomePage() {
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center justify-center mt-8 md:mt-0">     
-    <div className="w-full aspect-square overflow-hidden rounded-lg shadow-lg">
-        <img 
-            src="/images/poster1.jpg" 
-            alt="Poster Studio" 
-            className="w-full h-full object-cover object-center" 
-        />
-    </div>
-</div>
+                    <div className="flex items-center justify-center mt-8 md:mt-0">  
+                        <div className="w-full aspect-square overflow-hidden rounded-lg shadow-lg">
+                            <img 
+                                src="/images/poster1.jpg" 
+                                alt="Poster Studio" 
+                                className="w-full h-full object-cover object-center" 
+                            />
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -296,7 +302,6 @@ function HomePage() {
                         </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-                        {/* Service Cards */}
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
                             <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">📷 Self Photo Studio <br /> Cianjur</h3>
                             <p className="text-gray-400 text-sm mt-2 flex-grow">Our creative agency is a team of professionals focused on helping your brand grow.</p>

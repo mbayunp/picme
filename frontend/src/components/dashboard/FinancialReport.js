@@ -1,5 +1,3 @@
-// src/components/dashboard/FinancialReport.jsx
-
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import moment from 'moment';
@@ -16,6 +14,9 @@ import {
 
 // Mendaftarkan komponen Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+// ✅ Tambahkan variabel lingkungan
+const API_URL = process.env.REACT_APP_API_URL;
 
 const FinancialReport = ({ packages, studios }) => {
   const [rawReportData, setRawReportData] = useState([]);
@@ -41,8 +42,9 @@ const FinancialReport = ({ packages, studios }) => {
         studio_name: filterStudio,
       });
 
+      // ✅ PERBAIKAN: Menggunakan variabel lingkungan
       const response = await axios.get(
-        'http://localhost:8080/api/services/financial-report',
+        `${API_URL}/api/services/financial-report`,
         {
           params: {
             month: filterMonth,
@@ -53,7 +55,7 @@ const FinancialReport = ({ packages, studios }) => {
             ...config.headers,
             'Cache-Control': 'no-cache',
             Pragma: 'no-cache',
-            'If-None-Match': '', // paksa abaikan ETag
+            'If-None-Match': '',
           },
         }
       );

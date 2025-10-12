@@ -6,6 +6,9 @@ import { FaUpload, FaDownload } from 'react-icons/fa6';
 import fileDownload from 'js-file-download';
 import MergeModal from './MergeModal';
 
+// ✅ Tambahkan variabel lingkungan
+const API_URL = process.env.REACT_APP_API_URL;
+
 const CustomersData = ({ 
     customersData,
     sortKey, sortDirection, handleSort, renderSortArrow, showModal, 
@@ -26,8 +29,8 @@ const CustomersData = ({
     const [isTagsDropdownOpen, setIsTagsDropdownOpen] = useState(false);
     const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
-    const [showMergeModal, setShowMergeModal] = useState(false); // ✅ Tambahan state untuk modal
-    const [customerToMerge, setCustomerToMerge] = useState(null); // ✅ Tambahan state
+    const [showMergeModal, setShowMergeModal] = useState(false); 
+    const [customerToMerge, setCustomerToMerge] = useState(null); 
     
     const availableTags = ['Tag Baru', 'Loyal', 'VIP', 'Reguler'];
 
@@ -56,7 +59,8 @@ const CustomersData = ({
                 email: customerForm.email,
                 nomor_whatsapp: customerForm.nomor_whatsapp,
             };
-            await axios.put(`http://localhost:8080/api/services/customer/${currentCustomer.nomor_whatsapp}`, payload, config);
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+            await axios.put(`${API_URL}/api/services/customer/${currentCustomer.nomor_whatsapp}`, payload, config);
             showModal('Berhasil', 'Data pelanggan berhasil diperbarui!');
             setIsEditingCustomer(false);
             setCurrentCustomer(null);
@@ -94,7 +98,8 @@ const CustomersData = ({
                 headers: { 'x-access-token': token },
                 responseType: 'blob',
             };
-            const response = await axios.get('http://localhost:8080/api/services/customers/export', config);
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+            const response = await axios.get(`${API_URL}/api/services/customers/export`, config);
             fileDownload(response.data, `customers_data_${moment().format('YYYY-MM-DD')}.csv`);
             showModal('Berhasil', 'Data pelanggan berhasil diekspor.');
         } catch (error) {
@@ -123,7 +128,8 @@ const CustomersData = ({
                     'Content-Type': 'multipart/form-data',
                 }
             };
-            await axios.post('http://localhost:8080/api/services/customers/import', formData, config);
+            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+            await axios.post(`${API_URL}/api/services/customers/import`, formData, config);
             showModal('Berhasil', 'Data pelanggan berhasil diimpor!');
             setSelectedFile(null);
             fetchCustomers();
@@ -138,7 +144,8 @@ const CustomersData = ({
             try {
                 const token = localStorage.getItem('admin-token');
                 const config = { headers: { 'x-access-token': token } };
-                await axios.post('http://localhost:8080/api/services/customers/merge-duplicates', {}, config);
+                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                await axios.post(`${API_URL}/api/services/customers/merge-duplicates`, {}, config);
                 showModal('Berhasil', 'Data pelanggan berhasil digabungkan!');
                 fetchCustomers();
             } catch (error) {
@@ -148,7 +155,6 @@ const CustomersData = ({
         });
     };
     
-    // ✅ FUNGSI BARU: untuk menampilkan modal gabung
     const handleShowMergeModal = async (customer) => {
         if (customer.total_bookings > 1) {
             setCustomerToMerge(customer);
@@ -271,24 +277,6 @@ const CustomersData = ({
                     <div className="flex space-x-2 items-center">
                         <div className="relative">
                             <button
-                                onClick={() => setIsTagsDropdownOpen(!isTagsDropdownOpen)}
-                                className="bg-white text-gray-800 px-4 py-2 rounded-lg border border-gray-300 text-sm flex items-center"
-                            >
-                                {selectedTag || 'All Tags'} <FaChevronDown className={`ml-2 transform transition-transform duration-200 ${isTagsDropdownOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                            {isTagsDropdownOpen && (
-                                <div className="absolute z-10 mt-2 w-48 bg-white border rounded-lg shadow-lg">
-                                    <ul className="py-1 text-sm text-gray-700">
-                                        <li onClick={() => handleFilterByTag(null)}><a href="#" className="block px-4 py-2 hover:bg-gray-100">All Tags</a></li>
-                                        {availableTags.map(tag => (
-                                            <li key={tag} onClick={() => handleFilterByTag(tag)}><a href="#" className="block px-4 py-2 hover:bg-gray-100">{tag}</a></li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                        <div className="relative">
-                            <button
                                 onClick={() => handleSort('nama')}
                                 className="bg-white text-gray-800 px-4 py-2 rounded-lg border border-gray-300 text-sm flex items-center"
                             >
@@ -361,14 +349,13 @@ const CustomersData = ({
                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{customer.status || '-'}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-left text-sm font-medium">
                                     <button onClick={() => handleEditCustomerClick(customer)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
-                                    {/* ✅ TAMBAHAN: Tombol Gabung di setiap baris */}
                                     {customer.total_bookings > 1 && (
-                                      <button 
-                                          onClick={() => handleShowMergeModal(customer)} 
-                                          className="text-blue-600 hover:underline ml-2"
-                                      >
-                                          Gabung
-                                      </button>
+                                        <button 
+                                            onClick={() => handleShowMergeModal(customer)} 
+                                            className="text-blue-600 hover:underline ml-2"
+                                        >
+                                            Gabung
+                                        </button>
                                     )}
                                 </td>
                                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{customer.total_bookings}</td>
@@ -378,7 +365,6 @@ const CustomersData = ({
                 </table>
             </div>
             {renderPagination()}
-            {/* ✅ TAMBAHAN: Modal untuk menggabungkan duplikat */}
             {showMergeModal && (
                 <MergeModal
                     onClose={handleCloseMergeModal}

@@ -1,17 +1,17 @@
 import React from "react";
 import PicmeLogo from "../../assets/images/PicmeLogo.png";
 
+// ✅ Tambahkan variabel lingkungan untuk URL API
+const API_URL = process.env.REACT_APP_API_URL;
+
 const BookingSummary = ({ studio, date, time, cart, formData }) => {
-    // Ambil durasi dari formData yang sudah diperbarui
     const packageDuration = formData?.waktu_durasi || 0;
 
-    // Hitung waktu selesai
     const [startHour, startMinute] = time.split(":").map(Number);
     const totalMinutes = startHour * 60 + startMinute + packageDuration;
     const endHour = Math.floor(totalMinutes / 60);
     const endMinute = totalMinutes % 60;
 
-    // Format waktu selesai agar selalu dua digit
     const formattedEndHour = String(endHour).padStart(2, "0");
     const formattedEndMinute = String(endMinute).padStart(2, "0");
     const endTime = `${formattedEndHour}:${formattedEndMinute}`;
@@ -21,9 +21,9 @@ const BookingSummary = ({ studio, date, time, cart, formData }) => {
     const selectedPackage = cart.length > 0 ? cart[0] : null;
     const totalHarga = cart.reduce((sum, item) => sum + item.harga * item.quantity, 0);
     
-    // ✅ PERBAIKI: Hapus duplikasi path
+    // ✅ PERBAIKAN: Menggunakan variabel lingkungan
     const displayImage = selectedPackage?.image_url 
-        ? `http://localhost:8080/${selectedPackage.image_url}` 
+        ? `${API_URL}/${selectedPackage.image_url}` 
         : PicmeLogo;
 
     return (

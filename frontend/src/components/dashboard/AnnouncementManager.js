@@ -14,7 +14,8 @@ const AnnouncementManager = ({ showModal }) => {
     });
     const [imageFile, setImageFile] = useState(null);
 
-    const API_URL = "http://localhost:8080/api";
+    // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+    const API_URL = `${process.env.REACT_APP_API_URL}/api`;
 
     const fetchAnnouncements = async () => {
         setLoading(true);
@@ -111,14 +112,12 @@ const AnnouncementManager = ({ showModal }) => {
         });
     };
 
-    // Helper untuk mendapatkan URL gambar yang benar
     const getImageUrl = (path) => {
-      // Cek apakah path sudah berupa URL lengkap
       if (path && path.startsWith('http')) {
         return path;
       }
-      // Jika tidak, tambahkan base URL server lokal
-      return `http://localhost:8080/${path}`;
+      // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+      return `${process.env.REACT_APP_API_URL}/${path}`;
     };
 
     return (

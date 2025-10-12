@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// ✅ PERBAIKAN: Tambahkan variabel lingkungan untuk URL API
+const API_URL = process.env.REACT_APP_API_URL;
+
 function PortfolioPage() {
     const [portfolioItems, setPortfolioItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -11,13 +14,15 @@ function PortfolioPage() {
         if (path && path.startsWith('http')) {
             return path;
         }
-        return `http://localhost:8080/${path}`;
+        // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+        return `${API_URL}/${path}`;
     };
 
     useEffect(() => {
         const fetchPortfolio = async () => {
             try {
-                const response = await axios.get('http://localhost:8080/api/portfolio');
+                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+                const response = await axios.get(`${API_URL}/api/portfolio`);
                 setPortfolioItems(response.data);
             } catch (error) {
                 console.error('Error fetching portfolio:', error);
@@ -47,10 +52,9 @@ function PortfolioPage() {
 
     return (
         <div className="font-sans text-gray-900 bg-white min-h-screen pt-32 pb-20">
-            {/* Header Utama */}
             <div className="max-w-screen-xl mx-auto px-5 mb-16">
                 <h1 className="text-6xl md:text-7xl font-light leading-none">
-                    <span className="font-bold">Designing a</span>  Senandung.photography
+                    <span className="font-bold">Designing a</span>  Senandung.photography
                 </h1>
                 <div className="mt-8 flex items-center space-x-2 text-sm text-gray-500 uppercase tracking-widest">
                     <span>Our Works</span>
@@ -60,32 +64,26 @@ function PortfolioPage() {
                 </div>
             </div>
 
-            {/* Grid Portfolio */}
             <div className="max-w-screen-xl mx-auto px-5 grid grid-cols-1 md:grid-cols-2 gap-8">
                 {portfolioItems.map(item => (
                     <div 
                         key={item.id} 
                         className="group transform transition duration-300 hover:-translate-y-1 hover:shadow-2xl bg-white rounded-xl overflow-hidden"
                     >
-                        {/* ✅ PERBAIKAN: Tinggikan wrapper agar foto lebih besar */}
                         <div className="w-full relative h-[28rem] bg-gray-100 flex items-center justify-center">
                             <img 
                                 src={getImageUrl(item.image_url)} 
                                 alt={item.title} 
-                                // Gunakan object-contain dan w-full h-full
                                 className="w-full h-full object-contain rounded-t-xl group-hover:scale-105 transition-transform duration-300"
                             />
                         </div>
-                        {/* ✅ PERBAIKAN: Perkecil padding di keterangan */}
                         <div className="p-4">
                             <div className="flex items-center space-x-2 text-xs text-gray-500 uppercase tracking-wider">
                                 <span>{item.kategori}</span>
                                 <span className="text-gray-400">•</span>
                                 <span>May 24, 2024</span>
                             </div>
-                            {/* ✅ Perkecil ukuran font judul */}
                             <h3 className="mt-2 text-lg font-bold">{item.title}</h3>
-                            {/* ✅ Perkecil ukuran font deskripsi */}
                             <p className="mt-2 text-sm text-gray-600">{item.description}</p>
                         </div>
                     </div>

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
+// ✅ Tambahkan variabel lingkungan untuk URL API
+const API_URL = process.env.REACT_APP_API_URL;
+
 function PortfolioManager({ portfolioItems, fetchPortfolioItems, showModal, handleDelete }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -34,7 +37,8 @@ function PortfolioManager({ portfolioItems, fetchPortfolioItems, showModal, hand
     const formData = new FormData();
     formData.append("image", selectedFile);
     try {
-      const response = await axios.post("http://localhost:8080/api/upload", formData, {
+      // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+      const response = await axios.post(`${API_URL}/api/upload`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           "x-access-token": localStorage.getItem("admin-token")
@@ -66,14 +70,16 @@ function PortfolioManager({ portfolioItems, fetchPortfolioItems, showModal, hand
 
     try {
       if (editingItem) {
-        await axios.put(`http://localhost:8080/api/portfolio/${editingItem.id}`, portfolioData, {
+        // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+        await axios.put(`${API_URL}/api/portfolio/${editingItem.id}`, portfolioData, {
             headers: {
                 "x-access-token": localStorage.getItem("admin-token")
             }
         });
         showModal("Berhasil", "Item portfolio berhasil diperbarui.");
       } else {
-        await axios.post("http://localhost:8080/api/portfolio", portfolioData, {
+        // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+        await axios.post(`${API_URL}/api/portfolio`, portfolioData, {
             headers: {
                 "x-access-token": localStorage.getItem("admin-token")
             }
@@ -146,10 +152,10 @@ function PortfolioManager({ portfolioItems, fetchPortfolioItems, showModal, hand
               className="w-full p-2 border rounded"
             />
             {form.imageUrl && (
-              <img src={`http://localhost:8080/${form.imageUrl}`} alt="Current" className="w-24 h-24 object-cover rounded" />
+              // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+              <img src={`${API_URL}/${form.imageUrl}`} alt="Current" className="w-24 h-24 object-cover rounded" />
             )}
           </div>
-          {/* PERUBAHAN DI SINI: Ganti input teks menjadi dropdown */}
           <select
             name="category"
             value={form.category}
@@ -188,7 +194,8 @@ function PortfolioManager({ portfolioItems, fetchPortfolioItems, showModal, hand
           {portfolioItems.map((item) => (
             <div key={item.id} className="flex justify-between items-center p-4 border rounded-lg">
               <div className="flex items-center space-x-4">
-                <img src={`http://localhost:8080/${item.image_url}`} alt={item.title} className="w-16 h-16 object-cover rounded" />
+                {/* ✅ PERBAIKAN: Menggunakan variabel lingkungan */}
+                <img src={`${API_URL}/${item.image_url}`} alt={item.title} className="w-16 h-16 object-cover rounded" />
                 <div>
                   <p className="font-semibold">{item.title}</p>
                   <p className="text-sm text-gray-500">{item.kategori}</p>

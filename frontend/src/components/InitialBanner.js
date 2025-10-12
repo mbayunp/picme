@@ -28,8 +28,8 @@ const getImageUrl = (path) => {
     if (path && path.startsWith('http')) {
         return path;
     }
-    // ✅ PERBAIKAN: Perbaiki jalur gambar sesuai folder baru
-    return `http://localhost:8080/${path}`;
+    // ✅ PERBAIKAN: Menggunakan variabel lingkungan
+    return `${process.env.REACT_APP_API_URL}/${path}`;
 };
 
 
