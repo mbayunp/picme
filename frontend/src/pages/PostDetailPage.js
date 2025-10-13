@@ -102,8 +102,7 @@ function PostDetailPage() {
 
             setLoading(true);
             try {
-                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-                const response = await axios.get(`${API_URL}/posts/${id}`);
+                const response = await axios.get(`${API_URL}/api/posts/${id}`);
                 setPost(response.data.post);
                 setNavigation({
                     prevId: response.data.prevId,
@@ -126,7 +125,6 @@ function PostDetailPage() {
     const renderMedia = (postData) => {
         if (postData.media_url) {
             if (Array.isArray(postData.media_url) && postData.media_url.length > 0) {
-                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
                 const imageUrls = postData.media_url.map(url => url.startsWith('http') ? url : `${API_URL}/assets/images/${url}`);
                 return <MediaCarousel mediaUrls={imageUrls} title={postData.title} />;
             }

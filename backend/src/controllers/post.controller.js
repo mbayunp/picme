@@ -1,235 +1,180 @@
 // src/controllers/post.controller.js
-
 const connection = require('../db.js');
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
 
-// Fungsi untuk menangani pemrosesan media_url (JSON string ke Array)
+// Convert callback ke promise
+const query = util.promisify(connection.query).bind(connection);
+const unlink = util.promisify(fs.unlink);
+
+// Folder upload
+const uploadDir = path.join(__dirname, '..', '..', 'public', 'assets', 'images');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+// Helper: parsing JSON media_url
 const processPostMedia = (post) => {
-    if (post.media_url && typeof post.media_url === 'string') {
-        try {
-            // Coba parse string JSON menjadi array
-            post.media_url = JSON.parse(post.media_url);
-        } catch (e) {
-            // Jika gagal parse, biarkan sebagai string (mungkin itu URL video tunggal)
-        }
-    }
-    return post;
+  if (typeof post.media_url === 'string' && post.media_url.startsWith('[')) {
+    try {
+      post.media_url = JSON.parse(post.media_url);
+    } catch (e) {
+      console.warn("Invalid JSON in media_url:", post.media_url);
+    }
+  }
+  return post;
 };
 
-exports.findAll = (req, res) => {
-    const query = "SELECT *, media_url FROM posts ORDER BY created_at DESC"; 
-    connection.query(query, (err, results) => {
-        if (err) {
-            console.error("Error fetching posts:", err);
-            return res.status(500).send({ message: err.message || "Error mengambil postingan." });
-        }
-        
-        const processedResults = results.map(processPostMedia);
-        res.send(processedResults);
-    });
+// Helper: hapus file dengan aman
+const safeDeleteFile = async (filename) => {
+  if (!filename) return;
+  const filePath = path.join(uploadDir, path.basename(filename));
+  if (fs.existsSync(filePath)) {
+    try {
+      await unlink(filePath);
+    } catch (err) {
+      console.error("Gagal hapus file:", filename, err);
+    }
+  }
 };
 
-// Ganti fungsi findOne Anda di post.controller.js dengan yang ini
-exports.findOne = (req, res) => {
-    const postId = parseInt(req.params.id, 10);
+// 📜 GET semua postingan
+exports.findAll = async (req, res) => {
+  try {
+    const results = await query("SELECT * FROM posts ORDER BY created_at DESC");
+    const processed = results.map(processPostMedia);
+    res.send(processed);
+  } catch (err) {
+    console.error("Error fetching posts:", err);
+    res.status(500).send({ message: "Gagal mengambil daftar postingan." });
+  }
+};
 
-    // 1. Query untuk mengambil postingan saat ini
-    const postQuery = "SELECT * FROM posts WHERE id = ?";
-    
-    // 2. Query untuk mengambil ID postingan SEBELUMNYA
-    // (ID terbesar yang lebih kecil dari ID saat ini)
-    const prevQuery = "SELECT id FROM posts WHERE id < ? ORDER BY id DESC LIMIT 1";
-    
-    // 3. Query untuk mengambil ID postingan SELANJUTNYA
-    // (ID terkecil yang lebih besar dari ID saat ini)
-    const nextQuery = "SELECT id FROM posts WHERE id > ? ORDER BY id ASC LIMIT 1";
+// 📄 GET 1 postingan + prev & next
+exports.findOne = async (req, res) => {
+  const postId = Number(req.params.id);
+  if (isNaN(postId)) return res.status(400).send({ message: "ID tidak valid." });
 
-    connection.query(postQuery, [postId], (err, postResults) => {
-        if (err) {
-            console.error("Error fetching post:", err);
-            return res.status(500).send({ message: "Error mengambil postingan." });
-        }
-        if (postResults.length === 0) {
-            return res.status(404).send({ message: "Postingan tidak ditemukan." });
-        }
+  try {
+    const posts = await query("SELECT * FROM posts WHERE id = ?", [postId]);
+    if (posts.length === 0) return res.status(404).send({ message: "Postingan tidak ditemukan." });
 
-        const post = processPostMedia(postResults[0]); // processPostMedia dari kode Anda sebelumnya
+    const post = processPostMedia(posts[0]);
 
-        // Jalankan query untuk navigasi
-        connection.query(prevQuery, [postId], (err, prevResults) => {
-            if (err) return res.status(500).send({ message: "Error mengambil navigasi sebelumnya." });
-            
-            connection.query(nextQuery, [postId], (err, nextResults) => {
-                if (err) return res.status(500).send({ message: "Error mengambil navigasi selanjutnya." });
+    const [prev] = await query("SELECT id FROM posts WHERE id < ? ORDER BY id DESC LIMIT 1", [postId]);
+    const [next] = await query("SELECT id FROM posts WHERE id > ? ORDER BY id ASC LIMIT 1", [postId]);
 
-                const prevId = prevResults[0] ? prevResults[0].id : null;
-                const nextId = nextResults[0] ? nextResults[0].id : null;
-
-                // Kirim respons dalam format baru yang diharapkan frontend
-                res.send({
-                    post: post,
-                    prevId: prevId,
-                    nextId: nextId
-                });
-            });
-        });
+    res.send({
+      post,
+      prevId: prev ? prev.id : null,
+      nextId: next ? next.id : null,
     });
+  } catch (err) {
+    console.error("Error fetching post detail:", err);
+    res.status(500).send({ message: "Gagal mengambil detail postingan." });
+  }
 };
 
-exports.create = (req, res) => {
-    const { title, content, media_url } = req.body; 
-    
-    // Dapatkan nama file dari req.files
-    const image_url = req.files.image?.[0]?.filename || null;
-    const slides = req.files.slides?.map(file => file.filename) || null;
+// 🆕 CREATE postingan
+exports.create = async (req, res) => {
+  try {
+    const { title, content, media_url } = req.body;
+    if (!title || !content) {
+      return res.status(400).send({ message: "Judul dan konten wajib diisi." });
+    }
 
-    if (!title || !content) {
-        return res.status(400).send({ message: "Judul dan konten tidak boleh kosong." });
-    }
-    
-    let mediaUrlToSave = null;
-    if (slides) {
-        // Jika ada unggahan slide, simpan sebagai string JSON dari array nama file
-        mediaUrlToSave = JSON.stringify(slides);
-    } else if (media_url) {
-        // Jika tidak ada slide, cek media_url lama (untuk video)
-        mediaUrlToSave = media_url;
-    }
+    const imageFile = req.files.image?.[0]?.filename || null;
+    const slideFiles = req.files.slides?.map(f => f.filename) || [];
+    const mediaToSave = slideFiles.length ? JSON.stringify(slideFiles) : media_url || null;
 
-    const newPost = { 
-        title, 
-        content, 
-        image_url,
-        media_url: mediaUrlToSave
-    };
+    const newPost = { title, content, image_url: imageFile, media_url: mediaToSave };
+    const result = await query("INSERT INTO posts SET ?", newPost);
 
-    connection.query("INSERT INTO posts SET ?", newPost, (err, data) => {
-        if (err) {
-            console.error("Error creating post:", err);
-            return res.status(500).send({ message: err.message || "Error membuat postingan." });
-        }
-        res.status(201).send({
-            id: data.insertId,
-            title,
-            content,
-            image_url: image_url,
-            media_url: mediaUrlToSave
-        });
-    });
+    res.status(201).send({ id: result.insertId, ...newPost });
+  } catch (err) {
+    console.error("Error creating post:", err);
+    res.status(500).send({ message: "Gagal membuat postingan." });
+  }
 };
 
-exports.update = (req, res) => {
-    const postId = req.params.id;
+// ✏️ UPDATE postingan
+exports.update = async (req, res) => {
+  const postId = Number(req.params.id);
+  if (isNaN(postId)) return res.status(400).send({ message: "ID tidak valid." });
 
-    // 1. Ambil semua data yang relevan dari request
+  try {
     const { title, content } = req.body;
-    
-    // Ambil urutan baru dari slide lama (ini adalah string, perlu di-parse)
-    const newlyOrderedOldSlides = req.body.existing_slides ? JSON.parse(req.body.existing_slides) : [];
-    
-    // Ambil file baru yang diunggah
-    const newImageFile = req.files.image?.[0];
-    const newSlideFiles = req.files.slides?.map(file => file.filename) || [];
+    const existingSlides = req.body.existing_slides ? JSON.parse(req.body.existing_slides || '[]') : [];
+    const newImageFile = req.files.image?.[0]?.filename || null;
+    const newSlides = req.files.slides?.map(f => f.filename) || [];
 
-    // Query untuk mengambil data lama dari database
-    connection.query("SELECT image_url, media_url FROM posts WHERE id = ?", [postId], (err, rows) => {
-        if (err || rows.length === 0) {
-            console.error("Error fetching old post data:", err);
-            return res.status(500).send({ message: "Error mengambil data postingan lama." });
-        }
-        
-        const oldData = rows[0];
-        let newImageUrl = oldData.image_url;
+    const oldRows = await query("SELECT image_url, media_url FROM posts WHERE id = ?", [postId]);
+    if (oldRows.length === 0) return res.status(404).send({ message: "Postingan tidak ditemukan." });
 
-        // 2. Logika untuk menggabungkan slide lama dan baru
-        const finalSlides = [...newlyOrderedOldSlides, ...newSlideFiles];
-        const newMediaUrl = finalSlides.length > 0 ? JSON.stringify(finalSlides) : null;
+    const oldData = oldRows[0];
+    let imageUrl = oldData.image_url;
+    const finalSlides = [...existingSlides, ...newSlides];
+    const mediaUrl = finalSlides.length ? JSON.stringify(finalSlides) : null;
 
-        // 3. Logika untuk menghapus file lama yang tidak terpakai
-        // Hapus thumbnail lama jika ada yang baru
-        if (newImageFile) {
-            newImageUrl = newImageFile.filename;
-            if (oldData.image_url) {
-                const oldImagePath = path.join(uploadDir, oldData.image_url);
-                if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
-            }
-        }
+    // Hapus image lama jika ada yang baru
+    if (newImageFile) {
+      await safeDeleteFile(oldData.image_url);
+      imageUrl = newImageFile;
+    }
 
-        // Hapus file slide lama yang sudah tidak ada di daftar baru
-        if (oldData.media_url) {
-            try {
-                const oldSlides = JSON.parse(oldData.media_url);
-                if (Array.isArray(oldSlides)) {
-                    const slidesToDelete = oldSlides.filter(oldSlide => !newlyOrderedOldSlides.includes(oldSlide));
-                    slidesToDelete.forEach(slideName => {
-                        const oldSlidePath = path.join(uploadDir, slideName);
-                        if (fs.existsSync(oldSlidePath)) fs.unlinkSync(oldSlidePath);
-                    });
-                }
-            } catch (e) { /* Abaikan jika bukan JSON */ }
-        }
+    // Hapus slide lama yang sudah tidak dipakai
+    if (oldData.media_url) {
+      try {
+        const oldSlides = JSON.parse(oldData.media_url);
+        const toDelete = oldSlides.filter(s => !existingSlides.includes(s));
+        await Promise.all(toDelete.map(safeDeleteFile));
+      } catch (e) {
+        console.warn("Gagal parse media lama:", e);
+      }
+    }
 
-        // 4. Update database dengan semua data yang sudah benar
-        connection.query(
-            "UPDATE posts SET title = ?, content = ?, image_url = ?, media_url = ? WHERE id = ?",
-            [title, content, newImageUrl, newMediaUrl, postId],
-            (err2, result) => {
-                if (err2) {
-                    console.error("Error updating post:", err2);
-                    return res.status(500).send({ message: "Error memperbarui postingan." });
-                }
-                res.send({ message: "Postingan berhasil diperbarui!" });
-            }
-        );
+    // Update database
+    await query(
+      "UPDATE posts SET title=?, content=?, image_url=?, media_url=? WHERE id=?",
+      [title, content, imageUrl, mediaUrl, postId]
+    );
+
+    res.send({
+      message: "Postingan berhasil diperbarui!",
+      updated: { title, content, image_url: imageUrl, media_url: mediaUrl },
     });
+  } catch (err) {
+    console.error("Error updating post:", err);
+    res.status(500).send({ message: "Gagal memperbarui postingan." });
+  }
 };
 
-exports.delete = (req, res) => {
-    const postId = req.params.id;
-    connection.query("SELECT image_url, media_url FROM posts WHERE id = ?", [postId], (err, rows) => {
-        if (err) {
-            console.error("Error fetching media to delete:", err);
-            return res.status(500).send({ message: "Error server." });
-        }
-        
-        const imageUrl = rows[0]?.image_url;
-        const mediaUrl = rows[0]?.media_url;
+// 🗑️ DELETE postingan
+exports.delete = async (req, res) => {
+  const postId = Number(req.params.id);
+  if (isNaN(postId)) return res.status(400).send({ message: "ID tidak valid." });
 
-        connection.query("DELETE FROM posts WHERE id = ?", [postId], (err2, result) => {
-            if (err2) {
-                console.error("Error deleting post:", err2);
-                return res.status(500).send({ message: "Error menghapus postingan." });
-            }
-            
-            // Hapus file gambar tunggal
-            if (imageUrl) {
-                const filePath = path.join(__dirname, '..', '..', 'public', 'assets', 'images', imageUrl);
-                if (fs.existsSync(filePath)) {
-                    fs.unlink(filePath, errDel => {
-                        if (errDel) console.error("Error menghapus file gambar:", errDel);
-                    });
-                }
-            }
+  try {
+    const rows = await query("SELECT image_url, media_url FROM posts WHERE id = ?", [postId]);
+    if (rows.length === 0) return res.status(404).send({ message: "Postingan tidak ditemukan." });
 
-            // Hapus file slide jika ada
-            if (mediaUrl) {
-                try {
-                    const slides = JSON.parse(mediaUrl);
-                    if (Array.isArray(slides)) {
-                        slides.forEach(slide => {
-                            const filePath = path.join(__dirname, '..', '..', 'public', 'assets', 'images', slide);
-                            if (fs.existsSync(filePath)) {
-                                fs.unlink(filePath, errDel => {
-                                    if (errDel) console.error("Error menghapus file slide:", errDel);
-                                });
-                            }
-                        });
-                    }
-                } catch (e) { /* Abaikan jika media_url bukan array JSON */ }
-            }
+    const { image_url, media_url } = rows[0];
+    await query("DELETE FROM posts WHERE id = ?", [postId]);
 
-            res.send({ message: "Postingan berhasil dihapus." });
-        });
-    });
+    await safeDeleteFile(image_url);
+    if (media_url) {
+      try {
+        const slides = JSON.parse(media_url);
+        if (Array.isArray(slides)) {
+          await Promise.all(slides.map(safeDeleteFile));
+        }
+      } catch (e) {
+        console.warn("media_url bukan JSON array:", media_url);
+      }
+    }
+
+    res.send({ message: "Postingan berhasil dihapus." });
+  } catch (err) {
+    console.error("Error deleting post:", err);
+    res.status(500).send({ message: "Gagal menghapus postingan." });
+  }
 };

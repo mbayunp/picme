@@ -5,7 +5,6 @@ import InitialBanner from "../components/InitialBanner";
 import { FaChevronLeft, FaChevronRight, FaQuoteLeft } from 'react-icons/fa';
 import { useState, useEffect, useRef } from 'react';
 
-// ✅ PERBAIKAN: Tambahkan variabel lingkungan untuk URL API
 const API_URL = process.env.REACT_APP_API_URL;
 
 // Komponen Liquid Blob
@@ -219,15 +218,15 @@ function HomePage() {
     };
 
     return (
-        <div className="font-rethink-sans pt-20 md:pt-24">
+        <div className="font-rethink-sans pt-16 md:pt-24">
             <section className="bg-[#0d1a2c] text-white min-h-screen flex items-center px-4 sm:px-12 relative overflow-hidden">
                 <LiquidBlobAnimation />
                 <div className="max-w-7xl mx-auto z-10 w-full relative">
-                    <h1 className="text-7xl sm:text-7xl font-bold leading-tight mb-6">
+                    <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
                         <span className="block">Taking Some Happiness</span>
                         <span className="block text-[#b3e6ff]">Smile Today</span>
                     </h1>
-                    <p className="text-gray-300 text-3xl mb-8 max-w-5xl">
+                    <p className="text-gray-300 text-lg md:text-xl mb-8 max-w-3xl">
                         Welcome to a world of joy, passion, and boundless creativity. Together, let's create #ceritahariini and embark on an extraordinary journey where dreams come true.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4">
@@ -244,15 +243,15 @@ function HomePage() {
             <section className="bg-white py-20 px-4 sm:px-12 min-h-screen flex items-center">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 max-w-7xl mx-auto w-full">
                     <div className="flex flex-col justify-center">
-                        <h2 className="text-4xl sm:text-5xl font-bold leading-tight mb-6">
+                        <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
                             <span className="text-[#0d1a2c]">Discover</span> <br />
                             <span className="text-gray-900">Our</span>{" "}
                             <span className="font-normal">Studio</span>
                         </h2>
-                        <p className="text-gray-700 mb-4 text-justify">
+                        <p className="text-gray-700 mb-4 sm:text-justify">
                             Selamat datang di Picme Studio, ruang kreatif untuk menangkap setiap momen berharga dan menyalurkan ide-ide visual dengan cara yang unik. Kami percaya bahwa setiap orang punya cerita, dan melalui lensa kamera serta sentuhan desain, kami membantu mewujudkan cerita itu menjadi karya yang penuh makna.
                         </p>
-                        <p className="text-gray-700 mb-8 text-justify">
+                        <p className="text-gray-700 mb-8 sm:text-justify">
                             Studio kami dibuat agar seluruh orang merasa nyaman dan ramah, dengan konsep modern yang dipadukan dengan sentuhan kreatif, setiap sesi foto akan menjadi pengalaman yang sangat menyenangkan. Tidak hanya sekadar tempat berfoto, Picme Studio juga menjadi wadah untuk bereksperimen, berkreasi, dan mengekspresikan diri.
                         </p>
                         <div className="flex items-center space-x-4 mt-8">
@@ -277,14 +276,12 @@ function HomePage() {
 
             <section className="bg-black text-white py-20 px-4 sm:px-12 relative overflow-hidden min-h-screen flex flex-col justify-center">
                 <div className="max-w-7xl mx-auto z-10 relative w-full">
-                    <div className="md:absolute top-0 right-0 text-left md:text-right text-gray-400 text-sm max-w-xs mb-8 md:mb-16">
-                    </div>
                     <div className="flex flex-col md:flex-row justify-between items-center mb-16">
                         <div className="w-full flex items-center justify-start mb-8 md:mb-0">
                             <div className="w-24 h-16 md:w-48 md:h-24 overflow-hidden rounded-lg mr-4 md:mr-8 flex-shrink-0">
                                 <img src="/images/team.jpg" className="w-full h-full object-cover" alt="Team"/>
                             </div>
-                            <h2 className="text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight">
+                            <h2 className="text-4xl md:text-5xl lg:text-7xl font-bold leading-tight">
                                 <span className="text-gray-400">Unique</span>
                                 <span className="block lg:inline-block"> Ideas</span>
                                 <span className="block text-white">
@@ -294,7 +291,7 @@ function HomePage() {
                         </div>
                         <div className="w-full md:w-auto flex justify-start md:justify-end">
                             <button
-                                onClick={handleWhatWeDoClick}
+                                onClick={() => alert("WHAT WE DO button clicked!")}
                                 className="px-8 py-4 bg-blue-500 text-white rounded-full font-semibold hover:bg-blue-600 transition-colors flex items-center gap-2"
                             >
                                 WHAT WE DO <span className="ml-2 text-white">→</span>
