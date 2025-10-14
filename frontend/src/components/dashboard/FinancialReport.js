@@ -15,8 +15,14 @@ import {
 // Mendaftarkan komponen Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-// ✅ Tambahkan variabel lingkungan
 const API_URL = process.env.REACT_APP_API_URL;
+
+// Fungsi pembantu untuk kalkulasi
+const calculateTotalPrice = (item) => {
+    const price = parseInt(item.package_price, 10) || 0;
+    const quantity = parseInt(item.jumlah_orang, 10) || 1;
+    return price * quantity;
+};
 
 const FinancialReport = ({ packages, studios }) => {
   const [rawReportData, setRawReportData] = useState([]);
@@ -42,7 +48,6 @@ const FinancialReport = ({ packages, studios }) => {
         studio_name: filterStudio,
       });
 
-      // ✅ PERBAIKAN: Menggunakan variabel lingkungan
       const response = await axios.get(
         `${API_URL}/api/services/financial-report`,
         {
@@ -63,8 +68,9 @@ const FinancialReport = ({ packages, studios }) => {
       const data = response.data || [];
       setRawReportData(data);
 
+      // ✅ PERBAIKAN: Gunakan fungsi kalkulasi di sini
       const total = data.reduce(
-        (sum, item) => sum + (parseInt(item.package_price, 10) || 0),
+        (sum, item) => sum + calculateTotalPrice(item),
         0
       );
       setTotalRevenue(total);
@@ -104,7 +110,8 @@ const FinancialReport = ({ packages, studios }) => {
     let revenueData = {};
 
     (filteredData || []).forEach((item) => {
-      const price = parseInt(item.package_price, 10) || 0;
+      // ✅ PERBAIKAN: Gunakan fungsi kalkulasi di sini
+      const price = calculateTotalPrice(item);
       let key;
 
       if (viewType === 'daily') {
@@ -338,7 +345,8 @@ const FinancialReport = ({ packages, studios }) => {
                     {item.studio_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                    {formatCurrency(item.package_price)}
+                    {/* ✅ PERBAIKAN: Gunakan fungsi kalkulasi di sini */}
+                    {formatCurrency(calculateTotalPrice(item))}
                   </td>
                 </tr>
               ))

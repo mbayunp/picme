@@ -26,6 +26,13 @@ ChartJS.register(
     Filler
 );
 
+// Fungsi pembantu untuk menghitung total harga
+const calculateTotalPrice = (booking) => {
+    const price = booking.package_price || 0;
+    const quantity = booking.jumlah_orang || 1;
+    return price * quantity;
+};
+
 // ====================================================================
 // Komponen Anak 1: Grafik Penjualan
 // ====================================================================
@@ -41,7 +48,8 @@ const SalesChart = ({ bookings }) => {
             if (booking.status === 'confirmed') {
                 const date = moment(booking.tanggal).format('YYYY-MM-DD');
                 if (dataByDate[date] !== undefined) {
-                    dataByDate[date] += booking.package_price || 0;
+                    // ✅ PERBAIKAN: Gunakan fungsi calculateTotalPrice
+                    dataByDate[date] += calculateTotalPrice(booking);
                 }
             }
         });
@@ -62,10 +70,10 @@ const SalesChart = ({ bookings }) => {
     const totalSales = useMemo(() => 
         bookings
             .filter(b => b.status === 'confirmed' && moment(b.tanggal).isSameOrAfter(moment().subtract(6, 'days'), 'day'))
-            .reduce((sum, b) => sum + (b.package_price || 0), 0),
+            // ✅ PERBAIKAN: Gunakan fungsi calculateTotalPrice
+            .reduce((sum, b) => sum + calculateTotalPrice(b), 0),
     [bookings]);
     
-    // ✅ PERBAIKAN: Tambahkan options untuk memformat angka Rupiah
     const options = {
         responsive: true,
         plugins: {
@@ -80,7 +88,6 @@ const SalesChart = ({ bookings }) => {
                             label += ': ';
                         }
                         if (context.parsed.y !== null) {
-                            // Format angka di dalam tooltip
                             label += `Rp ${new Intl.NumberFormat('id-ID').format(context.parsed.y)}`;
                         }
                         return label;
@@ -92,7 +99,6 @@ const SalesChart = ({ bookings }) => {
             y: {
                 beginAtZero: true,
                 ticks: {
-                    // Format angka di sumbu Y
                     callback: function(value) {
                         return `Rp ${new Intl.NumberFormat('id-ID').format(value)}`;
                     }
@@ -116,10 +122,10 @@ const SalesChart = ({ bookings }) => {
 };
 
 // ====================================================================
-// Komponen Anak 2: Grafik Agenda (Tidak ada perubahan)
+// Komponen Anak 2: Grafik Agenda
 // ====================================================================
 const AgendaChart = ({ bookings }) => {
-     const chartData = useMemo(() => {
+    const chartData = useMemo(() => {
         const data = { confirmed: {}, canceled: {} };
         for (let i = 6; i >= 0; i--) {
             const date = moment().subtract(i, 'days').format('YYYY-MM-DD');
@@ -178,7 +184,7 @@ const AgendaChart = ({ bookings }) => {
 
 
 // ====================================================================
-// Komponen Anak 3: Aktivitas Terbaru (Tidak ada perubahan)
+// Komponen Anak 3: Aktivitas Terbaru
 // ====================================================================
 const RecentActivity = ({ bookings }) => {
     const recentBookings = useMemo(() => 
@@ -200,7 +206,8 @@ const RecentActivity = ({ bookings }) => {
                             </p>
                         </div>
                         <p className="font-semibold text-lg">
-                            Rp {(booking.package_price || 0).toLocaleString('id-ID')}
+                            {/* ✅ PERBAIKAN: Gunakan fungsi calculateTotalPrice */}
+                            Rp {(calculateTotalPrice(booking)).toLocaleString('id-ID')}
                         </p>
                     </div>
                 ))}
@@ -211,7 +218,7 @@ const RecentActivity = ({ bookings }) => {
 
 
 // ====================================================================
-// Komponen Utama: Beranda (Tidak ada perubahan)
+// Komponen Utama: Beranda
 // ====================================================================
 const Beranda = ({ bookings, studios }) => {
     const [studioFilter, setStudioFilter] = useState('');

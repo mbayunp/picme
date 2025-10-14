@@ -69,7 +69,7 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
         return cleanNumber;
     };
     
-    const totalHarga = eventData.package_price || 0;
+    const totalHarga = (eventData.package_price || 0) * (eventData.jumlah_orang || 1);
     
     const startMoment = moment(eventData.waktu_mulai, 'HH:mm:ss');
     const endMoment = moment(eventData.waktu_selesai, 'HH:mm:ss');
@@ -155,8 +155,7 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                         <div className="flex items-center space-x-2">
                             {eventData.image_url ? (
                                 <img
-                                    // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-                                    src={`${process.env.REACT_APP_API_URL}/${eventData.image_url}`}
+                                    src={`${process.env.REACT_APP_API_URL}/assets/images/${eventData.image_url}`}
                                     onError={(e) => {
                                         e.target.onerror = null;
                                         e.target.src = 'https://placehold.co/64x64/ccc/999?text=Paket';
@@ -195,6 +194,11 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                                 <p className="text-xs text-gray-500">Total Harga Paket</p>
                                 <p className="font-semibold text-lg">Rp {totalHarga.toLocaleString('id-ID')}</p>
                             </div>
+                            {/* Menampilkan jumlah orang */}
+                             <div>
+                                <p className="text-xs text-gray-500">Jumlah Orang</p>
+                                <p className="font-semibold text-lg">{eventData.jumlah_orang || '1'}</p>
+                            </div>
                             <div className="col-span-2">
                                 <p className="text-xs text-gray-500">Catatan</p>
                                 <p className="text-sm italic">
@@ -224,36 +228,7 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                         </button>
                         {isOtherDropdownOpen && (
                             <div className="absolute z-10 bottom-full mb-2 right-0 w-48 bg-white border rounded-lg shadow-lg">
-                                <ul className="py-1 text-sm text-gray-700">
-                                    <li
-                                        className="px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 cursor-pointer"
-                                        onClick={() => handleOtherAction('Ubah Agenda')}
-                                    >
-                                        <FaCalendarAlt />
-                                        <span>Ubah Agenda</span>
-                                    </li>
-                                    <li
-                                        className="px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 cursor-pointer"
-                                        onClick={() => handleOtherAction('Tambahkan Produk')}
-                                    >
-                                        <FaBoxOpen />
-                                        <span>Tambahkan Produk</span>
-                                    </li>
-                                    <li
-                                        className="px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 cursor-pointer"
-                                        onClick={() => handleOtherAction('Jadwal Ulang')}
-                                    >
-                                        <FaHistory />
-                                        <span>Jadwal Ulang</span>
-                                    </li>
-                                    <li
-                                        className="px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 text-red-600 cursor-pointer"
-                                        onClick={onCancelClick}
-                                    >
-                                        <FaTimes />
-                                        <span>Batalkan</span>
-                                    </li>
-                                </ul>
+                                {/* Opsi lainnya */}
                             </div>
                         )}
                     </div>

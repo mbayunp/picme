@@ -6,8 +6,8 @@ import Step0_SelectStudio from "../components/services/Step0_SelectStudio";
 import Step1_SelectPackage from "../components/services/Step1_SelectPackage";
 import Step2_SelectDateTime from "../components/services/Step2_SelectDateTime";
 import BookingModal from "../components/services/BookingModal";
+import SuccessPopup from "../components/SuccessPopup"; // Impor komponen pop-up
 
-// ✅ PERBAIKAN: Tambahkan variabel lingkungan untuk URL API
 const API_URL = process.env.REACT_APP_API_URL;
 
 function ServicesPage() {
@@ -54,6 +54,10 @@ function ServicesPage() {
     const [selectedModalPackage, setSelectedModalPackage] = useState(null);
     const [isCartOpen, setIsCartOpen] = useState(false);
 
+    // State baru untuk pop-up sukses
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
+
     const studios = [
         { name: "Picme Photo Studio 1", address: "cluster pramuka Blok C.4," },
         { name: "Picme Photo Studio 2", address: "cluster pramuka Blok C.4," },
@@ -80,7 +84,6 @@ function ServicesPage() {
     const fetchPackages = async (studioName) => {
         setLoadingPackages(true);
         try {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
             const response = await axios.get(`${API_URL}/api/packages?studio_name=${encodeURIComponent(studioName)}`);
             const formattedPackages = response.data.map((pkg) => ({
                 ...pkg,
@@ -125,7 +128,6 @@ function ServicesPage() {
         setLoadingSlots(true);
         try {
             const formattedDate = date.toISOString().split("T")[0];
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
             const response = await axios.get(
                 `${API_URL}/api/services/slots?date=${formattedDate}&studio=${studio}`
             );
@@ -198,8 +200,8 @@ function ServicesPage() {
             });
 
             if (!selectedDate) {
-            setSelectedDate(new Date()); 
-        }
+                setSelectedDate(new Date()); 
+            }
 
             setStep(2);
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -248,18 +250,12 @@ function ServicesPage() {
         };
 
         try {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
             await axios.post(`${API_URL}/api/services`, bookingData);
 
-            setMessage("Pemesanan berhasil!");
-            setStep(0);
-            setFormData({
-                nama: "", email: "", nomor_whatsapp: "", catatan: "",
-                waktu_mulai: "", waktu_selesai: "", package_id: null,
-                studio_name: "", jumlah_orang: 1, waktu_durasi: 0
-            });
-            setSelectedDate(new Date());
-            setCart([]);
+            // Tampilkan pop-up, bukan lagi pesan biasa
+            setSuccessMessage("Pemesanan berhasil! Silahkan tunggu konfirmasi melalui WhatsApp yang akan dihubungi oleh admin kami.");
+            setShowSuccessPopup(true);
+            
         } catch (error) {
             console.error("Error submitting booking:", error.response || error);
             const errorMessage =
@@ -268,6 +264,24 @@ function ServicesPage() {
                 : "Terjadi kesalahan saat memesan. Silakan coba lagi.";
             setMessage(errorMessage);
         }
+    };
+    
+    // Fungsi untuk menutup pop-up dan mereset state
+    const handleCloseSuccessPopup = () => {
+        setShowSuccessPopup(false);
+        setSuccessMessage("");
+        
+        // Reset state setelah pop-up ditutup
+        setStep(0);
+        setFormData({
+            nama: "", email: "", nomor_whatsapp: "", catatan: "",
+            waktu_mulai: "", waktu_selesai: "", package_id: null,
+            studio_name: "", jumlah_orang: 1, waktu_durasi: 0
+        });
+        setSelectedDate(null);
+        setSelectedStudio(null);
+        setCart([]);
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     const handleStudioSelect = (studio) => {
@@ -307,18 +321,22 @@ function ServicesPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 pt-24 px-6 pb-20">
+            {/* Tampilkan komponen pop-up di sini */}
+            <SuccessPopup
+                message={successMessage}
+                onClose={handleCloseSuccessPopup}
+            />
+
+            {/* Pemberitahuan untuk error, bukan untuk sukses */}
             {message && (
                 <div
-                    className={`px-4 py-3 rounded relative mb-4 border ${
-                        message.toLowerCase().includes("berhasil")
-                            ? "bg-green-100 border-green-400 text-green-700"
-                            : "bg-red-100 border-red-400 text-red-700"
-                    }`}
+                    className="bg-red-100 border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 border"
                     role="alert"
                 >
                     <span className="block sm:inline">{message}</span>
                 </div>
             )}
+
             {step === 0 && (
                 <Step0_SelectStudio
                     studios={studios} selectedStudio={selectedStudio} onSelectStudio={handleStudioSelect} onContinue={handleContinueToPackages}

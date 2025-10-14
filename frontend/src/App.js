@@ -19,6 +19,9 @@ import AdminLoginPage from "./pages/AdminLoginPage.js";
 import AdminRegisterPage from "./pages/AdminRegisterPage.js";
 import ContactPage from "./pages/ContactPage.js";
 import NotFoundPage from "./pages/NotFoundPage.js";
+import PrivacyPolicy from "./pages/PrivacyPolicy.js";
+import TermsAndConditions from "./pages/TermsAndConditions.js";
+import CookiePolicy from "./pages/CookiePolicy.js";
 
 function App() {
   return (
@@ -26,7 +29,7 @@ function App() {
       <ScrollToTop />
       <div className="min-h-screen flex flex-col font-sans bg-gray-50">
         <Routes>
-          {/* Public Routes */}
+          {/* Rute Publik */}
           <Route
             path="/"
             element={
@@ -87,7 +90,38 @@ function App() {
               </>
             }
           />
-          {/* Admin Routes */}
+          <Route
+            path="/privacy-policy"
+            element={
+              <>
+                <Header />
+                <PrivacyPolicy />
+                <Footer />
+              </>
+            }
+          />
+          <Route
+            path="/terms-and-conditions"
+            element={
+              <>
+                <Header />
+                <TermsAndConditions />
+                <Footer />
+              </>
+            }
+          />
+          <Route
+            path="/cookie-policy"
+            element={
+              <>
+                <Header />
+                <CookiePolicy />
+                <Footer />
+              </>
+            }
+          />
+
+          {/* Rute Admin */}
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/register" element={<AdminRegisterPage />} />
