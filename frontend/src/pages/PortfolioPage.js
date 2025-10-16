@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// ✅ PERBAIKAN: Tambahkan variabel lingkungan untuk URL API
 const API_URL = process.env.REACT_APP_API_URL;
 
 function PortfolioPage() {
@@ -9,19 +8,16 @@ function PortfolioPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Helper untuk mendapatkan URL gambar yang benar
     const getImageUrl = (path) => {
         if (path && path.startsWith('http')) {
             return path;
         }
-        // ✅ PERBAIKAN: Menggunakan variabel lingkungan
         return `${API_URL}/${path}`;
     };
 
     useEffect(() => {
         const fetchPortfolio = async () => {
             try {
-                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
                 const response = await axios.get(`${API_URL}/api/portfolio`);
                 setPortfolioItems(response.data);
             } catch (error) {
@@ -53,8 +49,8 @@ function PortfolioPage() {
     return (
         <div className="font-sans text-gray-900 bg-white min-h-screen pt-32 pb-20">
             <div className="max-w-screen-xl mx-auto px-5 mb-16">
-                <h1 className="text-6xl md:text-7xl font-light leading-none">
-                    <span className="font-bold">Designing a</span>  Senandung.photography
+                <h1 className="text-4xl md:text-7xl font-light leading-none">
+                    <span className="font-bold">Designing a</span> <span className="block md:inline">Senandung.photography</span>
                 </h1>
                 <div className="mt-8 flex items-center space-x-2 text-sm text-gray-500 uppercase tracking-widest">
                     <span>Our Works</span>
@@ -70,7 +66,7 @@ function PortfolioPage() {
                         key={item.id} 
                         className="group transform transition duration-300 hover:-translate-y-1 hover:shadow-2xl bg-white rounded-xl overflow-hidden"
                     >
-                        <div className="w-full relative h-[28rem] bg-gray-100 flex items-center justify-center">
+                        <div className="w-full relative h-64 md:h-[28rem] bg-gray-100 flex items-center justify-center">
                             <img 
                                 src={getImageUrl(item.image_url)} 
                                 alt={item.title} 

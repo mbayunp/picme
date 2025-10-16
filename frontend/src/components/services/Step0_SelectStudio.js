@@ -3,7 +3,7 @@ import PicmeLogo from "../../assets/images/PicmeLogo.png";
 
 const Step0_SelectStudio = ({ studios, selectedStudio, onSelectStudio, onContinue }) => {
     return (
-        <div className="flex w-full flex-col items-center">
+        <div className="flex w-full flex-col items-center pt-8">
             <h1 className="mb-8 text-3xl font-bold text-gray-800">Pilih Lokasi</h1>
             <div className="w-full max-w-md">
                 <div className="mb-6 rounded-lg bg-white p-4 text-center shadow-md">

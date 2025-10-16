@@ -1,9 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom"; // ✅ Import useLocation
 import axios from "axios";
 import moment from "moment";
 import InitialBanner from "../components/InitialBanner";
 import { FaChevronLeft, FaChevronRight, FaQuoteLeft } from 'react-icons/fa';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -53,23 +53,23 @@ function TestimonialSection() {
         changeTestimonial((index - 1 + testimonials.length) % testimonials.length);
     };
 
-    const startAutoPlay = () => {
+    const startAutoPlay = useCallback(() => {
         if (intervalRef.current) clearInterval(intervalRef.current);
         intervalRef.current = setInterval(() => {
             handleNext();
         }, 5000);
-    };
+    }, [handleNext]);
 
-    const stopAutoPlay = () => {
+    const stopAutoPlay = useCallback(() => {
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
         }
-    };
+    }, []);
     
     useEffect(() => {
         startAutoPlay();
         return () => stopAutoPlay();
-    }, [index]);
+    }, [index, startAutoPlay, stopAutoPlay]);
 
     const currentTestimonial = testimonials[index];
 
@@ -122,15 +122,21 @@ function HomePage() {
     const [loading, setLoading] = useState(true);
     const [showInitialBanner, setShowInitialBanner] = useState(false);
     const [bannerData, setBannerData] = useState([]);
+    const location = useLocation(); // ✅ Panggil useLocation
 
-    const handleWhatWeDoClick = () => {
-        alert("WHAT WE DO button clicked!");
-    };
+    // ✅ Tambahkan useEffect untuk menangani scroll
+    useEffect(() => {
+        if (location.hash) {
+            const element = document.getElementById(location.hash.substring(1));
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    }, [location]);
 
     useEffect(() => {
         const fetchPosts = async () => {
             try {
-                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
                 const response = await axios.get(`${API_URL}/api/posts`);
                 setPosts(response.data.slice(0, 4));
             } catch (error) {
@@ -143,7 +149,6 @@ function HomePage() {
         
         const fetchBanners = async () => {
             try {
-                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
                 const response = await axios.get(`${API_URL}/api/announcements`); 
                 const data = response.data || [];
                 setBannerData(data);
@@ -171,12 +176,10 @@ function HomePage() {
 
     const getThumbnailUrl = (post) => {
         if (post.image_url) {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
             return `${API_URL}/assets/images/${post.image_url}`;
         }
         if (Array.isArray(post.media_url) && post.media_url.length > 0) {
             const firstImage = post.media_url[0];
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
             return `${API_URL}/assets/images/${firstImage}`;
         }
         return 'https://placehold.co/800x600/D1D5DB/1F2937?text=No+Image';
@@ -230,7 +233,7 @@ function HomePage() {
                         Welcome to a world of joy, passion, and boundless creativity. Together, let's create #ceritahariini and embark on an extraordinary journey where dreams come true.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4">
-                        <Link to="/more" className="px-6 py-3 border-2 border-white rounded-full font-semibold text-center hover:bg-white hover:text-[#0d1a2c] transition">
+                        <Link to="#discover-studio" className="px-6 py-3 border-2 border-white rounded-full font-semibold text-center hover:bg-white hover:text-[#0d1a2c] transition">
                             SEE MORE →
                         </Link>
                         <Link to="/services" className="px-6 py-3 bg-white text-[#0d1a2c] border-2 border-white rounded-full font-semibold text-center hover:bg-gray-100 transition">
@@ -240,7 +243,8 @@ function HomePage() {
                 </div>
             </section>
 
-            <section className="bg-white py-20 px-4 sm:px-12 min-h-screen flex items-center">
+            {/* ✅ Berikan ID untuk section ini agar bisa di-scroll */}
+            <section id="discover-studio" className="bg-white py-20 px-4 sm:px-12 min-h-screen flex items-center">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 max-w-7xl mx-auto w-full">
                     <div className="flex flex-col justify-center">
                         <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
@@ -282,41 +286,38 @@ function HomePage() {
                                 <img src="/images/team.jpg" className="w-full h-full object-cover" alt="Team"/>
                             </div>
                             <h2 className="text-4xl md:text-5xl lg:text-7xl font-bold leading-tight">
-                                <span className="text-gray-400">Unique</span>
-                                <span className="block lg:inline-block"> Ideas</span>
+                                <span className="text-gray-400">Express Yourself </span>
+                                <span className="block lg:inline-block">in </span>
                                 <span className="block text-white">
-                                    For Your <span className="text-gray-400">Business.</span>
+                                    Every <span className="text-gray-400"> Frame</span>
                                 </span>
                             </h2>
                         </div>
                         <div className="w-full md:w-auto flex justify-start md:justify-end">
-                            <button
-                                onClick={() => alert("WHAT WE DO button clicked!")}
-                                className="px-8 py-4 bg-blue-500 text-white rounded-full font-semibold hover:bg-blue-600 transition-colors flex items-center gap-2"
-                            >
-                                WHAT WE DO <span className="ml-2 text-white">→</span>
-                            </button>
+                            <Link to="/portfolio" className="px-6 py-3 bg-white text-[#0d1a2c] border-2 border-white rounded-full font-semibold text-center hover:bg-gray-100 transition">
+                                What We Do →
+                            </Link>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
-                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">📷 Self Photo Studio <br /> Cianjur</h3>
-                            <p className="text-gray-400 text-sm mt-2 flex-grow">Our creative agency is a team of professionals focused on helping your brand grow.</p>
+                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">Self-Controlled<br /> Experience </h3>
+                            <p className="text-gray-400 text-sm mt-2 flex-grow">You're the photographer! Use the remote to take photos at your leisure. No awkwardness, more freedom of expression.</p>
                             <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
-                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">🎥📷 Senandung<br /> Photography</h3>
-                            <p className="text-gray-400 text-sm mt-2 flex-grow">z</p>
+                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">Selected Properties <br />& Backgrounds</h3>
+                            <p className="text-gray-400 text-sm mt-2 flex-grow">Choose from a variety of backgrounds and props to create the perfect setting for your photos.</p>
                             <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
-                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">Advertising and <br /> Marketing Campaigns</h3>
-                            <p className="text-gray-400 text-sm mt-2 flex-grow"></p>
+                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">Instant <br />  and Quality Results</h3>
+                            <p className="text-gray-400 text-sm mt-2 flex-grow">Get your photos instantly with our state-of-the-art technology, ensuring high-quality results every time.</p>
                             <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
                         <div className="group border border-gray-700 p-8 rounded-lg flex flex-col items-start text-left bg-[#1a1a1a] transition-all duration-300 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-2">
-                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">Creative Consulting <br /> and Development</h3>
-                            <p className="text-gray-400 text-sm mt-2 flex-grow"></p>
+                            <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-500 transition-colors duration-300">Couple <br /> & Pre-wedding</h3>
+                            <p className="text-gray-400 text-sm mt-2 flex-grow">Capture the love and connection between couples with our specialized pre-wedding photoshoots.</p>
                             <div className="w-3 h-3 rounded-full bg-gray-500 mt-4 group-hover:bg-blue-500 transition-colors duration-300"></div>
                         </div>
                     </div>

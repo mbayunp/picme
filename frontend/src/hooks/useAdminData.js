@@ -127,33 +127,37 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         };
     };
     
-    const fetchDashboardData = useCallback(async (studioId = '') => {
+        const fetchDashboardData = useCallback(async (studioId = '') => {
         if (!isAuthenticated) return;
         setDashboardData(null); 
 
         try {
-            const startDate = moment().subtract(6, 'days').format('YYYY-MM-DD');
-            let url = `${API_URL}/services?startDate=${startDate}`;
+        const startDate = moment().subtract(6, 'days').format('YYYY-MM-DD');
+        let url = `${API_URL}/services?startDate=${startDate}`;
 
-            if (studioId) {
-                const studioName = studios.find(s => String(s.id) === String(studioId))?.name;
-                if (studioName) {
-                    url += `&studio_name=${encodeURIComponent(studioName)}`;
-                }
-            }
-            
-            const res = await axios.get(url, getTokenConfig());
-            const filteredBookings = Array.isArray(res.data) ? res.data : res.data.data || [];
-            
-            const summary = processBookingsForDashboard(filteredBookings);
-            setDashboardData(summary);
+        if (studioId) {
+        const studioName = studios.find(s => String(s.id) === String(studioId))?.name;
+        if (studioName) {
+        url += `&studio_name=${encodeURIComponent(studioName)}`;
+        }
+        }
+
+        const res = await axios.get(url, getTokenConfig());
+        const filteredBookings = Array.isArray(res.data) ? res.data : res.data.data || [];
+
+        setBookings(filteredBookings);
+
+        const summary = processBookingsForDashboard(filteredBookings);
+        setDashboardData(summary);
 
         } catch (error) {
-            console.error('Error fetching dashboard data:', error);
-            showModal('Gagal', 'Gagal memuat data ringkasan untuk beranda.');
-            setDashboardData({ salesData: { labels: [], values: [], total: 0 }, agendaData: { labels: [], confirmedValues: [], canceledValues: [], totalConfirmed: 0, totalCanceled: 0 }, recentActivities: [] });
+        console.error('Error fetching dashboard data:', error);
+        showModal('Gagal', 'Gagal memuat data ringkasan untuk beranda.');
+
+        setBookings([]);
+        setDashboardData({ salesData: { labels: [], values: [], total: 0 }, agendaData: { labels: [], confirmedValues: [], canceledValues: [], totalConfirmed: 0, totalCanceled: 0 }, recentActivities: [] });
         }
-    }, [studios, showModal, isAuthenticated]);
+        }, [studios, showModal, isAuthenticated]);
 
     const fetchPosts = useCallback(async () => {
         if (!isAuthenticated) return;
