@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import moment from "moment";
 import BookingSummary from "../components/services/BookingSummary";
 import BookingForm from "../components/services/BookingForm";
 import Step0_SelectStudio from "../components/services/Step0_SelectStudio";
 import Step1_SelectPackage from "../components/services/Step1_SelectPackage";
 import Step2_SelectDateTime from "../components/services/Step2_SelectDateTime";
 import BookingModal from "../components/services/BookingModal";
-import SuccessPopup from "../components/SuccessPopup"; // Impor komponen pop-up
+import SuccessPopup from "../components/SuccessPopup";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 function ServicesPage() {
+    // Fungsi getMonday yang sudah diperbaiki
     const getMonday = (d) => {
         const date = new Date(d);
-        const day = date.getDay();
-        const diff = day === 0 ? -6 : 1 - day;
-        date.setDate(date.getDate() + diff);
+        const day = date.getDay(); // 0 = Minggu, 1 = Senin, ... 6 = Sabtu
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Logika yang benar
+        date.setDate(diff);
         date.setHours(0, 0, 0, 0);
         return date;
     };
@@ -54,7 +56,6 @@ function ServicesPage() {
     const [selectedModalPackage, setSelectedModalPackage] = useState(null);
     const [isCartOpen, setIsCartOpen] = useState(false);
 
-    // State baru untuk pop-up sukses
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
 
@@ -127,7 +128,8 @@ function ServicesPage() {
     const fetchAvailableSlots = async (date, studio) => {
         setLoadingSlots(true);
         try {
-            const formattedDate = date.toISOString().split("T")[0];
+            // Perbaikan di sini: Gunakan moment untuk format tanggal yang aman
+            const formattedDate = moment(date).format('YYYY-MM-DD');
             const response = await axios.get(
                 `${API_URL}/api/services/slots?date=${formattedDate}&studio=${studio}`
             );
@@ -147,9 +149,9 @@ function ServicesPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
 
     const handleSlotClick = (time) => {
-        setFormData({ 
-            ...formData, 
-            waktu_mulai: time, 
+        setFormData({
+            ...formData,
+            waktu_mulai: time,
             waktu_selesai: "",
         });
     };
@@ -165,9 +167,9 @@ function ServicesPage() {
 
     const handleAddToCart = () => {
         if (!selectedModalPackage) return;
-        
+
         const newItem = { ...selectedModalPackage, quantity };
-        
+
         const existingItemIndex = cart.findIndex(item => item.id === newItem.id);
 
         if (existingItemIndex > -1) {
@@ -178,7 +180,7 @@ function ServicesPage() {
         } else {
             setCart([...cart, newItem]);
         }
-        
+
         setSelectedPackage(selectedModalPackage);
 
         setShowModal(false);
@@ -190,7 +192,7 @@ function ServicesPage() {
         if (cart.length > 0) {
             const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
             const firstPackage = cart[0];
-            
+
             setFormData({
                 ...formData,
                 package_id: firstPackage.id,
@@ -200,7 +202,7 @@ function ServicesPage() {
             });
 
             if (!selectedDate) {
-                setSelectedDate(new Date()); 
+                setSelectedDate(new Date());
             }
 
             setStep(2);
@@ -211,7 +213,7 @@ function ServicesPage() {
     const handleRemoveFromCart = (packageId) => {
         setCart(cart.filter(item => item.id !== packageId));
     };
-    
+
     const toggleCart = () => {
         setIsCartOpen(!isCartOpen);
     };
@@ -231,17 +233,20 @@ function ServicesPage() {
             setMessage("Isi jumlah orang minimal 1!");
             return;
         }
-        
+
         const [startHour, startMinute] = data.waktu_mulai.split(':').map(Number);
         const endHour = startHour + Math.floor(data.waktu_durasi / 60);
         const endMinute = startMinute + (data.waktu_durasi % 60);
+
+        // Perbaikan di sini: Gunakan moment untuk format tanggal yang aman
+        const formattedDate = moment(selectedDate).format('YYYY-MM-DD');
 
         const bookingData = {
             nama: data.nama,
             email: data.email,
             nomor_whatsapp: data.nomor_whatsapp,
             catatan: data.catatan,
-            tanggal: selectedDate.toISOString().split("T")[0],
+            tanggal: formattedDate,
             waktu_mulai: data.waktu_mulai,
             waktu_selesai: `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`,
             package_id: data.package_id,
@@ -252,10 +257,9 @@ function ServicesPage() {
         try {
             await axios.post(`${API_URL}/api/services`, bookingData);
 
-            // Tampilkan pop-up, bukan lagi pesan biasa
             setSuccessMessage("Pemesanan berhasil! Silahkan tunggu konfirmasi melalui WhatsApp yang akan dihubungi oleh admin kami.");
             setShowSuccessPopup(true);
-            
+
         } catch (error) {
             console.error("Error submitting booking:", error.response || error);
             const errorMessage =
@@ -265,13 +269,11 @@ function ServicesPage() {
             setMessage(errorMessage);
         }
     };
-    
-    // Fungsi untuk menutup pop-up dan mereset state
+
     const handleCloseSuccessPopup = () => {
         setShowSuccessPopup(false);
         setSuccessMessage("");
-        
-        // Reset state setelah pop-up ditutup
+
         setStep(0);
         setFormData({
             nama: "", email: "", nomor_whatsapp: "", catatan: "",
@@ -321,13 +323,11 @@ function ServicesPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 pt-24 px-6 pb-20">
-            {/* Tampilkan komponen pop-up di sini */}
             <SuccessPopup
                 message={successMessage}
                 onClose={handleCloseSuccessPopup}
             />
 
-            {/* Pemberitahuan untuk error, bukan untuk sukses */}
             {message && (
                 <div
                     className="bg-red-100 border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 border"
@@ -350,7 +350,7 @@ function ServicesPage() {
                     <BookingModal
                         showModal={showModal} onClose={() => setShowModal(false)} modalCurrentPackage={modalCurrentPackage} selectedModalPackage={selectedModalPackage} onSelectModalPackage={setSelectedModalPackage} quantity={quantity} onSetQuantity={setQuantity} onAddToCart={handleAddToCart}
                     />
-                    
+
                     {cart.length > 0 && (
                         <div className="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-lg border-t md:w-1/3 md:mx-auto md:rounded-t-lg">
                             <div className="flex items-center justify-between p-4">

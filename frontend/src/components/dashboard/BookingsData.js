@@ -1,3 +1,4 @@
+// src/components/dashboard/BookingsData.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 import moment from 'moment';
@@ -18,7 +19,7 @@ const BookingsData = ({
     getPackageName,
     showModal,
     fetchAllBookings,
-    handleDelete,
+    handleDelete, // ✅ Perbaikan: Prop ini sekarang diterima.
     handleConfirmBooking,
     handleCancelBooking,
     bookingData,
@@ -350,6 +351,7 @@ const BookingsData = ({
                         onClose={handleCloseDetailModal}
                         handleConfirmBooking={handleConfirmBooking}
                         handleCancelBooking={handleCancelBooking}
+                        handleDelete={handleDelete} // ✅ Perbaikan: Prop ini sekarang diteruskan.
                         showModal={showModal}
                     />
                 </div>

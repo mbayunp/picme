@@ -15,6 +15,7 @@ import FinancialReport from '../components/dashboard/FinancialReport';
 import ContactMessages from '../components/dashboard/ContactMessages';
 import AnnouncementManager from '../components/dashboard/AnnouncementManager';
 import Beranda from '../components/dashboard/Beranda';
+import BookingDetailModal from '../components/dashboard/BookingDetailModal'; // Impor komponen modal
 
 
 const Modal = ({ title, message, onConfirm, onCancel }) => (
@@ -39,7 +40,7 @@ const Modal = ({ title, message, onConfirm, onCancel }) => (
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('beranda');
-    const [selectedStudio, setSelectedStudio] = useState('1'); 
+    const [selectedStudio, setSelectedStudio] = useState('1');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
 
     const {
@@ -52,6 +53,22 @@ const AdminDashboard = () => {
         bookingData, bookingCurrentPage, bookingTotalPages, setBookingPage,
         duplicateRecords, fetchDuplicateRecords, mergeCustomer,
     } = useAdminData(activeTab, selectedStudio, selectedCustomer);
+    
+    // State untuk mengelola modal detail pemesanan
+    const [isBookingDetailModalOpen, setIsBookingDetailModalOpen] = useState(false);
+    const [selectedBookingEvent, setSelectedBookingEvent] = useState(null);
+
+    // Fungsi untuk membuka modal detail pemesanan
+    const handleOpenBookingDetailModal = (event) => {
+        setSelectedBookingEvent(event);
+        setIsBookingDetailModalOpen(true);
+    };
+
+    // Fungsi untuk menutup modal detail pemesanan
+    const handleCloseBookingDetailModal = () => {
+        setIsBookingDetailModalOpen(false);
+        setSelectedBookingEvent(null);
+    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -70,7 +87,7 @@ const AdminDashboard = () => {
                         setSelectedStudio={setSelectedStudio}
                         packages={packages}
                         showModal={showModal}
-                        handleDelete={handleDelete}
+                        handleDelete={handleDelete} // Pastikan prop ini ada
                         handleConfirmBooking={handleConfirmBooking}
                         handleCancelBooking={handleCancelBooking}
                     />
@@ -78,18 +95,18 @@ const AdminDashboard = () => {
             case "bookings-data":
                 return (
                     <BookingsData
-                        sortedBookings={sortedBookings} 
-                        packages={packages} 
-                        studios={studios} 
-                        sortKey={sortKey} 
+                        sortedBookings={sortedBookings}
+                        packages={packages}
+                        studios={studios}
+                        sortKey={sortKey}
                         sortDirection={sortDirection}
-                        handleSort={handleSort} 
-                        renderSortArrow={renderSortArrow} 
-                        formatShortDate={formatShortDate} 
+                        handleSort={handleSort}
+                        renderSortArrow={renderSortArrow}
+                        formatShortDate={formatShortDate}
                         getPackageName={getPackageName}
-                        showModal={showModal} 
-                        fetchAllBookings={fetchAllBookings} 
-                        handleDelete={handleDelete}
+                        showModal={showModal}
+                        fetchAllBookings={fetchAllBookings}
+                        handleDelete={handleDelete} // Pastikan prop ini ada
                         handleConfirmBooking={handleConfirmBooking}
                         handleCancelBooking={handleCancelBooking}
                         bookingData={bookingData}
@@ -111,7 +128,6 @@ const AdminDashboard = () => {
                     />
                 );
             case 'announcements':
-                // ✅ KOMPONEN BARU UNTUK MENGELOLA PENGUMUMAN
                 return <AnnouncementManager showModal={showModal} />;
             case 'portfolio':
                 return (
@@ -139,7 +155,20 @@ const AdminDashboard = () => {
                     onCancel={modalInfo.action ? closeModal : null}
                 />
             )}
+            
+            {/* Modal Detail Pemesanan */}
+            {isBookingDetailModalOpen && selectedBookingEvent && (
+                <BookingDetailModal
+                    selectedEvent={selectedBookingEvent}
+                    onClose={handleCloseBookingDetailModal}
+                    handleConfirmBooking={handleConfirmBooking}
+                    handleCancelBooking={handleCancelBooking}
+                    handleDelete={handleDelete} // Prop yang dibutuhkan untuk menghapus
+                    showModal={showModal}
+                />
+            )}
         </AdminLayout>
     );
 };
+
 export default AdminDashboard;

@@ -31,10 +31,10 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
 
     const onConfirmClick = () => {
         if (typeof handleConfirmBooking === 'function') {
-            onClose(); 
+            onClose();
             handleConfirmBooking(eventData.id, () => {
                 // Tambahkan logika refresh data di sini jika diperlukan
-            }); 
+            });
         } else {
             console.error('handleConfirmBooking is not a function');
             if (typeof showModal === 'function') {
@@ -45,7 +45,7 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
 
     const onCancelClick = () => {
         if (typeof showModal === 'function' && typeof handleCancelBooking === 'function') {
-            onClose(); 
+            onClose();
             showModal(
                 'Konfirmasi Pembatalan',
                 `Apakah Anda yakin ingin membatalkan pemesanan ini?`,
@@ -68,21 +68,20 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
         }
         return cleanNumber;
     };
-    
+
     const totalHarga = (eventData.package_price || 0) * (eventData.jumlah_orang || 1);
-    
+
     const startMoment = moment(eventData.waktu_mulai, 'HH:mm:ss');
     const endMoment = moment(eventData.waktu_selesai, 'HH:mm:ss');
     const duration = endMoment.diff(startMoment, 'minutes') || 0;
-    
+
     const formattedWaNumber = formatWhatsAppNumber(eventData.nomor_whatsapp);
-    const waUrl = formattedWaNumber 
+    const waUrl = formattedWaNumber
         ? `https://wa.me/${formattedWaNumber}?text=Halo%20${encodeURIComponent(eventData.nama)}%2C%20saya%20admin%20Picme%20Photo%20Studio%20ingin%20mengkonfirmasi%20pemesanan%20Anda%20pada%20tanggal%20${moment(eventData.tanggal).format('DD%20MMM%20YYYY')}.`
         : '#';
 
     return (
         <div className="relative w-full max-w-2xl mx-auto my-6 bg-white rounded-lg shadow-xl p-6">
-            
             <div className="flex items-center justify-between pb-3 border-b border-gray-200">
                 <h3 className="text-xl font-bold">Lihat Agenda</h3>
                 <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
@@ -194,8 +193,7 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                                 <p className="text-xs text-gray-500">Total Harga Paket</p>
                                 <p className="font-semibold text-lg">Rp {totalHarga.toLocaleString('id-ID')}</p>
                             </div>
-                            {/* Menampilkan jumlah orang */}
-                             <div>
+                            <div>
                                 <p className="text-xs text-gray-500">Jumlah Orang</p>
                                 <p className="font-semibold text-lg">{eventData.jumlah_orang || '1'}</p>
                             </div>
@@ -228,7 +226,18 @@ const BookingDetailModal = ({ selectedEvent, onClose, handleConfirmBooking, show
                         </button>
                         {isOtherDropdownOpen && (
                             <div className="absolute z-10 bottom-full mb-2 right-0 w-48 bg-white border rounded-lg shadow-lg">
-                                {/* Opsi lainnya */}
+                                <button
+                                    onClick={onCancelClick}
+                                    className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
+                                >
+                                    Batalkan Pemesanan
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(eventData.id)}
+                                    className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
+                                >
+                                    Hapus Pemesanan
+                                </button>
                             </div>
                         )}
                     </div>

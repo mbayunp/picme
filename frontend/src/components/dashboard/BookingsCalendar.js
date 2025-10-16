@@ -1,5 +1,4 @@
 // src/components/dashboard/BookingsCalendar.jsx
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
@@ -10,7 +9,7 @@ import BookingDetailModal from './BookingDetailModal';
 moment.locale('id');
 const localizer = momentLocalizer(moment);
 
-const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio, packages, showModal, handleConfirmBooking, handleCancelBooking }) => {
+const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio, packages, showModal, handleConfirmBooking, handleCancelBooking, handleDelete }) => {
     const [events, setEvents] = useState([]);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [showEventModal, setShowEventModal] = useState(false);
@@ -150,6 +149,7 @@ const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio
                         onClose={handleCloseEventModal}
                         handleConfirmBooking={handleConfirmBooking}
                         handleCancelBooking={handleCancelBooking}
+                        handleDelete={handleDelete} // ✅ Perbaikan: Prop ini sekarang diteruskan.
                         showModal={showModal} 
                     />
                 </div>

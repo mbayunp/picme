@@ -4,8 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import moment from 'moment';
 
-// ✅ PERBAIKAN: Menggunakan variabel lingkungan untuk URL API
-const API_URL = process.env.REACT_APP_API_URL + '/api';
+const API_URL = process.env.REACT_APP_API_URL;
 
 const getTokenConfig = () => {
     const token = localStorage.getItem('admin-token');
@@ -127,43 +126,42 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         };
     };
     
-        const fetchDashboardData = useCallback(async (studioId = '') => {
+    const fetchDashboardData = useCallback(async (studioId = '') => {
         if (!isAuthenticated) return;
         setDashboardData(null); 
 
         try {
-        const startDate = moment().subtract(6, 'days').format('YYYY-MM-DD');
-        let url = `${API_URL}/services?startDate=${startDate}`;
+            const startDate = moment().subtract(6, 'days').format('YYYY-MM-DD');
+            let url = `${API_URL}/api/services?startDate=${startDate}`;
 
-        if (studioId) {
-        const studioName = studios.find(s => String(s.id) === String(studioId))?.name;
-        if (studioName) {
-        url += `&studio_name=${encodeURIComponent(studioName)}`;
-        }
-        }
+            if (studioId) {
+                const studioName = studios.find(s => String(s.id) === String(studioId))?.name;
+                if (studioName) {
+                    url += `&studio_name=${encodeURIComponent(studioName)}`;
+                }
+            }
 
-        const res = await axios.get(url, getTokenConfig());
-        const filteredBookings = Array.isArray(res.data) ? res.data : res.data.data || [];
+            const res = await axios.get(url, getTokenConfig());
+            const filteredBookings = Array.isArray(res.data) ? res.data : res.data.data || [];
 
-        setBookings(filteredBookings);
+            setBookings(filteredBookings);
 
-        const summary = processBookingsForDashboard(filteredBookings);
-        setDashboardData(summary);
+            const summary = processBookingsForDashboard(filteredBookings);
+            setDashboardData(summary);
 
         } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        showModal('Gagal', 'Gagal memuat data ringkasan untuk beranda.');
+            console.error('Error fetching dashboard data:', error);
+            showModal('Gagal', 'Gagal memuat data ringkasan untuk beranda.');
 
-        setBookings([]);
-        setDashboardData({ salesData: { labels: [], values: [], total: 0 }, agendaData: { labels: [], confirmedValues: [], canceledValues: [], totalConfirmed: 0, totalCanceled: 0 }, recentActivities: [] });
+            setBookings([]);
+            setDashboardData({ salesData: { labels: [], values: [], total: 0 }, agendaData: { labels: [], confirmedValues: [], canceledValues: [], totalConfirmed: 0, totalCanceled: 0 }, recentActivities: [] });
         }
-        }, [studios, showModal, isAuthenticated]);
+    }, [studios, showModal, isAuthenticated]);
 
     const fetchPosts = useCallback(async () => {
         if (!isAuthenticated) return;
         try {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-            const res = await axios.get(`${API_URL}/posts`, getTokenConfig());
+            const res = await axios.get(`${API_URL}/api/posts`, getTokenConfig());
             setPosts(res.data);
         } catch (error) {
             console.error("Error fetching posts:", error);
@@ -174,8 +172,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     const fetchPackages = useCallback(async () => {
         if (!isAuthenticated) return;
         try {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-            const res = await axios.get(`${API_URL}/packages`, getTokenConfig());
+            const res = await axios.get(`${API_URL}/api/packages`, getTokenConfig());
             setPackages(res.data);
         } catch (error) {
             console.error("Error fetching packages:", error);
@@ -191,8 +188,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
                 setBookings([]);
                 return;
             }
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-            const res = await axios.get(`${API_URL}/services?studio_name=${encodeURIComponent(studioName)}`, getTokenConfig());
+            const res = await axios.get(`${API_URL}/api/services?studio_name=${encodeURIComponent(studioName)}`, getTokenConfig());
             
             const data = Array.isArray(res.data) ? res.data : res.data.data || [];
             setBookings(data);
@@ -207,8 +203,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     const fetchAllBookings = useCallback(async (page = 1) => {
         if (activeTab !== 'bookings-data' || !isAuthenticated) return;
         try {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-            const res = await axios.get(`${API_URL}/services?page=${page}&limit=10`, getTokenConfig());
+            const res = await axios.get(`${API_URL}/api/services?page=${page}&limit=10`, getTokenConfig());
             setBookingPagination(res.data);
             console.log("Booking data with pagination:", res.data);
         } catch (error) {
@@ -220,8 +215,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     const fetchCustomers = useCallback(async (page = 1, search = '') => {
         if (activeTab !== 'customers' || !isAuthenticated) return;
         try {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-            const res = await axios.get(`${API_URL}/services/customers?page=${page}&limit=10&search=${encodeURIComponent(search)}`, getTokenConfig());
+            const res = await axios.get(`${API_URL}/api/services/customers?page=${page}&limit=10&search=${encodeURIComponent(search)}`, getTokenConfig());
             setCustomerPagination(res.data);
             console.log("Customer data with pagination:", res.data);
         } catch (error) {
@@ -233,8 +227,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     const fetchPortfolioItems = useCallback(async () => {
         if (!isAuthenticated) return;
         try {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-            const res = await axios.get(`${API_URL}/portfolio`, getTokenConfig());
+            const res = await axios.get(`${API_URL}/api/portfolio`, getTokenConfig());
             setPortfolioItems(res.data);
         } catch (error) {
             console.error('Error fetching portfolio items:', error);
@@ -245,8 +238,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     const fetchCustomerDetail = useCallback(async (nomor_whatsapp) => {
         if (!isAuthenticated) return;
         try {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-            const res = await axios.get(`${API_URL}/services/customer/${nomor_whatsapp}`, getTokenConfig());
+            const res = await axios.get(`${API_URL}/api/services/customer/${nomor_whatsapp}`, getTokenConfig());
             setCustomerDetail(res.data);
             console.log("Customer Detail fetched:", res.data);
         } catch (error) {
@@ -258,8 +250,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     const fetchContactMessages = useCallback(async () => {
         if (!isAuthenticated) return;
         try {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-            const res = await axios.get(`${API_URL}/contact`, getTokenConfig());
+            const res = await axios.get(`${API_URL}/api/contact`, getTokenConfig());
             setContactMessages(res.data);
         } catch (error) {
             console.error('Error fetching contact messages:', error);
@@ -271,8 +262,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         if (!isAuthenticated) return showModal('Error', 'Anda harus login untuk melakukan aksi ini.');
         showModal('Konfirmasi Checkout', 'Apakah Anda yakin ingin mengkonfirmasi dan melakukan checkout pemesanan ini?', async () => {
             try {
-                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-                await axios.put(`${API_URL}/services/${id}/confirm`, {}, getTokenConfig()); 
+                await axios.put(`${API_URL}/api/services/${id}/confirm`, {}, getTokenConfig()); 
                 showModal('Berhasil', 'Pemesanan berhasil dikonfirmasi dan checkout!');
                 if (onClose) onClose();
                 fetchAllBookings();
@@ -293,13 +283,16 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         if (!isAuthenticated) return showModal('Error', 'Anda harus login untuk melakukan aksi ini.');
         showModal('Konfirmasi', `Apakah Anda yakin ingin menghapus data ini?`, async () => {
             try {
-                // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-                await axios.delete(`${API_URL}/${endpoint}/${id}`, getTokenConfig());
+                // ✅ Perbaikan: Menggunakan variabel lingkungan dengan benar
+                await axios.delete(`${API_URL}/api/${endpoint}/${id}`, getTokenConfig());
                 showModal('Berhasil', successMessage);
-                refetchFunction();
+                if (refetchFunction) {
+                    refetchFunction();
+                }
             } catch (error) {
                 console.error('Error deleting:', error);
-                showModal('Gagal', failureMessage);
+                const errorMessage = error.response?.data?.message || failureMessage;
+                showModal('Gagal', errorMessage);
             }
         });
     }, [showModal, isAuthenticated]);
@@ -307,8 +300,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     const handleCancelBooking = useCallback(async (id) => {
         if (!isAuthenticated) return showModal('Error', 'Anda harus login untuk melakukan aksi ini.');
         try {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-            await axios.put(`${API_URL}/services/${id}/cancel`, {}, getTokenConfig());
+            await axios.put(`${API_URL}/api/services/${id}/cancel`, {}, getTokenConfig());
             showModal('Berhasil', 'Pemesanan berhasil dibatalkan!');
             if (activeTab === 'bookings') {
                 fetchBookings(selectedStudio);
@@ -453,11 +445,10 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
     const fetchDuplicateRecords = useCallback(async (nomor_whatsapp) => {
         if (!isAuthenticated) return;
         try {
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-            const res = await axios.get(`${API_URL}/services/customers/duplicates/${nomor_whatsapp}`, getTokenConfig());
+            const res = await axios.get(`${API_URL}/api/services/customers/duplicates/${nomor_whatsapp}`, getTokenConfig());
             setDuplicateRecords(res.data);
         } catch (error) {
-            console.oducts('Error fetching duplicate records:', error);
+            console.error('Error fetching duplicate records:', error);
             setDuplicateRecords([]);
         }
     }, [isAuthenticated]);
@@ -466,8 +457,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         if (!isAuthenticated) return showModal('Error', 'Anda harus login untuk melakukan aksi ini.');
         try {
             const payload = { masterId, duplicateIds };
-            // ✅ PERBAIKAN: Menggunakan variabel lingkungan
-            await axios.post(`${API_URL}/services/customers/merge-single`, payload, getTokenConfig());
+            await axios.post(`${API_URL}/api/services/customers/merge-single`, payload, getTokenConfig());
             showModal('Berhasil', 'Data pelanggan berhasil digabungkan.');
             fetchCustomers(1, searchQuery);
         } catch (error) {
