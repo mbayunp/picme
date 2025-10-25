@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import moment from 'moment';
+import 'moment/locale/id';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -12,50 +13,63 @@ import {
   Legend,
 } from 'chart.js';
 
-// Mendaftarkan komponen Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+moment.locale('id');
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-// Fungsi pembantu untuk kalkulasi
 const calculateTotalPrice = (item) => {
-    const price = parseInt(item.package_price, 10) || 0;
-    const quantity = parseInt(item.jumlah_orang, 10) || 1;
-    return price * quantity;
+  const price = parseInt(item.package_price, 10) || 0;
+  const quantity = parseInt(item.jumlah_orang, 10) || 1;
+  return price * quantity;
 };
 
 const FinancialReport = ({ packages, studios }) => {
   const [rawReportData, setRawReportData] = useState([]);
-  const [totalRevenue, setTotalRevenue] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // State untuk filter utama
+  const [filterType, setFilterType] = useState('monthly');
+  const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
   const [filterMonth, setFilterMonth] = useState(moment().month() + 1);
   const [filterYear, setFilterYear] = useState(moment().year());
   const [filterStudio, setFilterStudio] = useState('');
-  const [viewType, setViewType] = useState('daily');
 
-  const fetchFinancialData = async () => {
+  const [chartViewType, setChartViewType] = useState('daily');
+
+  const apiParams = useMemo(() => {
+    const baseParams = { studio_name: filterStudio };
+
+    if (filterType === 'monthly') {
+      return {
+        ...baseParams,
+        month: filterMonth,
+        year: filterYear,
+      };
+    }
+
+    const date = moment(selectedDate);
+    return {
+      ...baseParams,
+      month: date.month() + 1,
+      year: date.year(),
+    };
+  }, [filterType, filterMonth, filterYear, selectedDate, filterStudio]);
+
+  const fetchFinancialData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const token = localStorage.getItem('admin-token');
       const config = { headers: { 'x-access-token': token } };
 
-      console.log('🔎 Fetching financial data with params:', {
-        month: filterMonth,
-        year: filterYear,
-        studio_name: filterStudio,
-      });
+      console.log('🔎 Fetching financial data with params:', apiParams);
 
       const response = await axios.get(
         `${API_URL}/api/services/financial-report`,
         {
-          params: {
-            month: filterMonth,
-            year: filterYear,
-            studio_name: filterStudio,
-          },
+          params: apiParams,
           headers: {
             ...config.headers,
             'Cache-Control': 'no-cache',
@@ -68,12 +82,6 @@ const FinancialReport = ({ packages, studios }) => {
       const data = response.data || [];
       setRawReportData(data);
 
-      // ✅ PERBAIKAN: Gunakan fungsi kalkulasi di sini
-      const total = data.reduce(
-        (sum, item) => sum + calculateTotalPrice(item),
-        0
-      );
-      setTotalRevenue(total);
     } catch (err) {
       console.error('❌ Error fetching financial report:', err);
       setError(
@@ -82,11 +90,10 @@ const FinancialReport = ({ packages, studios }) => {
     } finally {
       setLoading(false);
     }
-  };
-
+  }, [apiParams]);
   useEffect(() => {
     fetchFinancialData();
-  }, [filterMonth, filterYear, filterStudio]);
+  }, [fetchFinancialData]);
 
   const formatCurrency = (amount) => {
     const numericAmount = parseFloat(amount) || 0;
@@ -103,24 +110,44 @@ const FinancialReport = ({ packages, studios }) => {
   };
 
   const filteredData = useMemo(() => {
-    return rawReportData;
-  }, [rawReportData]);
+    let data = rawReportData;
+
+    if (filterType === 'daily') {
+      data = rawReportData.filter((item) =>
+        moment(item.tanggal).isSame(selectedDate, 'day')
+      );
+    } else if (filterType === 'weekly') {
+      data = rawReportData.filter((item) =>
+        moment(item.tanggal).isSame(selectedDate, 'week')
+      );
+    }
+    
+
+    return data;
+  }, [rawReportData, filterType, selectedDate]);
+
+  const filteredTotalRevenue = useMemo(() => {
+      return filteredData.reduce(
+        (sum, item) => sum + calculateTotalPrice(item),
+        0
+      );
+  }, [filteredData]);
+
 
   const aggregatedChartData = useMemo(() => {
     let revenueData = {};
 
     (filteredData || []).forEach((item) => {
-      // ✅ PERBAIKAN: Gunakan fungsi kalkulasi di sini
       const price = calculateTotalPrice(item);
       let key;
 
-      if (viewType === 'daily') {
+      if (chartViewType === 'daily') {
         key = moment(item.tanggal).format('DD MMM');
-      } else if (viewType === 'weekly') {
+      } else if (chartViewType === 'weekly') {
         const weekStart = moment(item.tanggal).startOf('week').format('DD MMM');
         const weekEnd = moment(item.tanggal).endOf('week').format('DD MMM');
         key = `${weekStart} - ${weekEnd}`;
-      } else if (viewType === 'monthly') {
+      } else if (chartViewType === 'monthly') {
         key = moment(item.tanggal).format('MMMM');
       }
 
@@ -128,14 +155,14 @@ const FinancialReport = ({ packages, studios }) => {
     });
 
     const sortedKeys = Object.keys(revenueData).sort((a, b) => {
-      if (viewType === 'daily') {
+      if (chartViewType === 'daily') {
         return moment(a, 'DD MMM').diff(moment(b, 'DD MMM'));
-      } else if (viewType === 'weekly') {
+      } else if (chartViewType === 'weekly') {
         return moment(a.split(' ')[0], 'DD MMM').diff(
           moment(b.split(' ')[0], 'DD MMM')
         );
-      } else if (viewType === 'monthly') {
-        return moment(a, 'MMMM').diff(moment(b, 'MMMM'));
+      } else if (chartViewType === 'monthly') {
+        return moment(a, 'MMMM', 'id').month() - moment(b, 'MMMM', 'id').month();
       }
       return 0;
     });
@@ -147,7 +174,7 @@ const FinancialReport = ({ packages, studios }) => {
       labels,
       datasets: [
         {
-          label: `Pendapatan (${viewType})`,
+          label: `Pendapatan (${chartViewType})`,
           data: revenues,
           backgroundColor: 'rgba(54, 162, 235, 0.6)',
           borderColor: 'rgba(54, 162, 235, 1)',
@@ -155,8 +182,8 @@ const FinancialReport = ({ packages, studios }) => {
         },
       ],
     };
-  }, [filteredData, viewType]);
-
+  }, [filteredData, chartViewType]);
+  
   const chartOptions = {
     responsive: true,
     plugins: {
@@ -166,7 +193,7 @@ const FinancialReport = ({ packages, studios }) => {
       title: {
         display: true,
         text: `Laporan Keuangan ${
-          viewType.charAt(0).toUpperCase() + viewType.slice(1)
+          chartViewType.charAt(0).toUpperCase() + chartViewType.slice(1)
         }`,
       },
     },
@@ -184,7 +211,7 @@ const FinancialReport = ({ packages, studios }) => {
   const getMonths = () => {
     return moment.months().map((month, index) => ({
       value: index + 1,
-      label: month,
+      label: month.charAt(0).toUpperCase() + month.slice(1),
     }));
   };
 
@@ -197,6 +224,22 @@ const FinancialReport = ({ packages, studios }) => {
     return years;
   };
 
+  const getFilterLabel = () => {
+    if (filterType === 'monthly') {
+      const monthName = moment.months(filterMonth - 1);
+      return `Bulan: ${monthName} ${filterYear}`;
+    }
+    if (filterType === 'weekly') {
+      const start = moment(selectedDate).startOf('week').format('DD MMM');
+      const end = moment(selectedDate).endOf('week').format('DD MMM YYYY');
+      return `Minggu: ${start} - ${end}`;
+    }
+    if (filterType === 'daily') {
+      return `Tanggal: ${moment(selectedDate).format('DD MMMM YYYY')}`;
+    }
+    return 'Laporan Keuangan';
+  };
+
   if (loading)
     return <div className="text-center mt-8">Memuat laporan keuangan...</div>;
   if (error)
@@ -206,48 +249,14 @@ const FinancialReport = ({ packages, studios }) => {
     <div className="p-5 bg-gray-100 rounded-lg flex-grow flex flex-col">
       <h3 className="text-2xl font-bold mb-4">Rekapan Keuangan</h3>
 
-      <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4 mb-4">
-        <select
-          value={filterStudio}
-          onChange={(e) => setFilterStudio(e.target.value)}
-          className="p-2 border rounded-md"
-        >
-          <option value="">Semua Studio</option>
-          {(studios || []).map((studio) => (
-            <option key={studio.name} value={studio.name}>
-              {studio.name}
-            </option>
-          ))}
-        </select>
-        <div className="flex items-center space-x-2">
-          <select
-            value={filterMonth}
-            onChange={(e) => setFilterMonth(e.target.value)}
-            className="p-2 border rounded-md"
-          >
-            {getMonths().map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filterYear}
-            onChange={(e) => setFilterYear(e.target.value)}
-            className="p-2 border rounded-md"
-          >
-            {getYears().map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex space-x-2">
+      {/* --- Filter controls --- */}
+      <div className="flex flex-col space-y-4 mb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-semibold">Tipe Filter:</span>
           <button
-            onClick={() => setViewType('daily')}
-            className={`p-2 rounded-md ${
-              viewType === 'daily'
+            onClick={() => setFilterType('daily')}
+            className={`p-2 rounded-md text-sm ${
+              filterType === 'daily'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-800'
             }`}
@@ -255,9 +264,9 @@ const FinancialReport = ({ packages, studios }) => {
             Harian
           </button>
           <button
-            onClick={() => setViewType('weekly')}
-            className={`p-2 rounded-md ${
-              viewType === 'weekly'
+            onClick={() => setFilterType('weekly')}
+            className={`p-2 rounded-md text-sm ${
+              filterType === 'weekly'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-800'
             }`}
@@ -265,10 +274,113 @@ const FinancialReport = ({ packages, studios }) => {
             Mingguan
           </button>
           <button
-            onClick={() => setViewType('monthly')}
-            className={`p-2 rounded-md ${
-              viewType === 'monthly'
+            onClick={() => setFilterType('monthly')}
+            className={`p-2 rounded-md text-sm ${
+              filterType === 'monthly'
                 ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-800'
+            }`}
+          >
+            Bulanan
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-4">
+          {filterType === 'monthly' ? (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Bulan
+                </label>
+                <select
+                  value={filterMonth}
+                  onChange={(e) => setFilterMonth(e.target.value)}
+                  className="p-2 border rounded-md"
+                >
+                  {getMonths().map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tahun
+                </label>
+                <select
+                  value={filterYear}
+                  onChange={(e) => setFilterYear(e.target.value)}
+                  className="p-2 border rounded-md"
+                >
+                  {getYears().map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Pilih Tanggal
+              </label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="p-2 border rounded-md"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Studio
+            </label>
+            <select
+              value={filterStudio}
+              onChange={(e) => setFilterStudio(e.target.value)}
+              className="p-2 border rounded-md"
+            >
+              <option value="">Semua Studio</option>
+              {(studios || []).map((studio) => (
+                <option key={studio.name} value={studio.name}>
+                  {studio.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+          <span className="font-semibold">Tampilan Chart:</span>
+          <button
+            onClick={() => setChartViewType('daily')}
+            className={`p-2 rounded-md text-sm ${
+              chartViewType === 'daily'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-800'
+            }`}
+          >
+            Harian
+          </button>
+          <button
+            onClick={() => setChartViewType('weekly')}
+            className={`p-2 rounded-md text-sm ${
+              chartViewType === 'weekly'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-800'
+            }`}
+          >
+            Mingguan
+          </button>
+          <button
+            onClick={() => setChartViewType('monthly')}
+            className={`p-2 rounded-md text-sm ${
+              chartViewType === 'monthly'
+                ? 'bg-green-600 text-white'
                 : 'bg-gray-200 text-gray-800'
             }`}
           >
@@ -284,14 +396,16 @@ const FinancialReport = ({ packages, studios }) => {
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <div className="flex justify-between items-center mb-4">
           <p className="text-lg font-semibold">
-            Total Pendapatan dari Booking Selesai:
+            Total Pendapatan ({getFilterLabel()}):
           </p>
+          {/* filteredTotalRevenue*/}
           <p className="text-3xl font-bold text-green-600">
-            {formatCurrency(totalRevenue)}
+            {formatCurrency(filteredTotalRevenue)}
           </p>
         </div>
       </div>
 
+      {/* --- Tabel Data --- */}
       <div className="flex-grow overflow-y-auto bg-white rounded-lg shadow-sm">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50 sticky top-0">
@@ -345,7 +459,6 @@ const FinancialReport = ({ packages, studios }) => {
                     {item.studio_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                    {/* ✅ PERBAIKAN: Gunakan fungsi kalkulasi di sini */}
                     {formatCurrency(calculateTotalPrice(item))}
                   </td>
                 </tr>
@@ -356,7 +469,8 @@ const FinancialReport = ({ packages, studios }) => {
                   colSpan="5"
                   className="px-6 py-4 text-center text-sm text-gray-500"
                 >
-                  Tidak ada data booking dengan status 'selesai' di bulan ini.
+                  Tidak ada data booking dengan status 'selesai' untuk filter
+                  ini.
                 </td>
               </tr>
             )}

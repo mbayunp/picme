@@ -1,4 +1,3 @@
-// src/App.js
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -22,6 +21,8 @@ import NotFoundPage from "./pages/NotFoundPage.js";
 import PrivacyPolicy from "./pages/PrivacyPolicy.js";
 import TermsAndConditions from "./pages/TermsAndConditions.js";
 import CookiePolicy from "./pages/CookiePolicy.js";
+
+import ProtectedRoute from "./components/admin/ProtectedRoute.js";
 
 function App() {
   return (
@@ -121,12 +122,13 @@ function App() {
             }
           />
 
-          {/* Rute Admin */}
-          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/register" element={<AdminRegisterPage />} />
 
-          {/* Rute 404 (Not Found) - harus diletakkan di paling akhir */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
+
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>

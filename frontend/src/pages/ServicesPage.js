@@ -12,11 +12,10 @@ import SuccessPopup from "../components/SuccessPopup";
 const API_URL = process.env.REACT_APP_API_URL;
 
 function ServicesPage() {
-    // Fungsi getMonday yang sudah diperbaiki
     const getMonday = (d) => {
         const date = new Date(d);
-        const day = date.getDay(); // 0 = Minggu, 1 = Senin, ... 6 = Sabtu
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Logika yang benar
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1);
         date.setDate(diff);
         date.setHours(0, 0, 0, 0);
         return date;
@@ -157,13 +156,17 @@ function ServicesPage() {
     };
 
     const handleOpenDetailModal = (categoryName) => {
-        const relatedPackages = packages.filter(pkg => pkg.nama_paket.startsWith(categoryName));
-        if (relatedPackages.length > 0) {
-            setModalCurrentPackage(relatedPackages);
-            setSelectedModalPackage(relatedPackages[0]);
-            setShowModal(true);
-        }
-    };
+    const relatedPackages = packages.filter(pkg => 
+        pkg.nama_paket.startsWith(categoryName) && 
+        (pkg.is_active === 1 || pkg.is_active === true) 
+    );
+    
+    if (relatedPackages.length > 0) {
+        setModalCurrentPackage(relatedPackages);
+        setSelectedModalPackage(relatedPackages[0]);
+        setShowModal(true);
+    }
+};
 
     const handleAddToCart = () => {
         if (!selectedModalPackage) return;
@@ -310,11 +313,13 @@ function ServicesPage() {
     };
 
     const groupedPackages = packages.reduce((acc, pkg) => {
-        const categoryName = pkg.nama_paket.split(' - ')[0];
-        if (!acc[categoryName]) {
-            acc[categoryName] = [];
+        if (pkg.is_active === 1 || pkg.is_active === true) {
+            const categoryName = pkg.nama_paket.split(' - ')[0];
+            if (!acc[categoryName]) {
+                acc[categoryName] = [];
+            }
+            acc[categoryName].push(pkg);
         }
-        acc[categoryName].push(pkg);
         return acc;
     }, {});
 

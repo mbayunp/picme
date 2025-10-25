@@ -1,10 +1,15 @@
-// src/components/AdminLayout.jsx
-
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaSignOutAlt, FaTachometerAlt, FaCalendarAlt, FaUsers, FaImage, FaCameraRetro, FaChartLine, FaEnvelope, FaBullhorn } from 'react-icons/fa';
 
 const AdminLayout = ({ activeTab, setActiveTab, children }) => {
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        localStorage.removeItem('admin-token');
+        navigate('/admin/login');
+    };
+
     return (
         <div className="flex min-h-screen bg-gray-100 text-gray-800">
             {/* Sidebar */}
@@ -15,7 +20,7 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                     </div>
                     <nav>
                         <ul>
-                            {/* ✅ MENU BERANDA DITAMBAHKAN DI SINI */}
+                            {/* Menu Beranda */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('beranda')}
@@ -24,7 +29,7 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaTachometerAlt className="mr-3" /> Beranda
                                 </button>
                             </li>
-
+                            {/* Menu Jadwal Booking */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('bookings')}
@@ -33,15 +38,16 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaCalendarAlt className="mr-3" /> Jadwal Booking
                                 </button>
                             </li>
-                            <li className="mb-2">
+                            {/* Menu Data Booking */}
+                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('bookings-data')}
                                     className={`w-full text-left flex items-center p-3 rounded-lg transition-colors duration-200 ${activeTab === 'bookings-data' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-200'}`}
                                 >
-                                    {/* Mengubah ikon agar tidak sama dengan Beranda */}
                                     <FaChartLine className="mr-3" /> Data Booking
                                 </button>
                             </li>
+                             {/* Menu Data Pelanggan */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('customers')}
@@ -50,6 +56,7 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaUsers className="mr-3" /> Data Pelanggan
                                 </button>
                             </li>
+                            {/* Menu Pengumuman */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('announcements')}
@@ -58,6 +65,7 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaBullhorn className="mr-3" /> Pengumuman
                                 </button>
                             </li>
+                            {/* Menu Pesan Masuk */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('contact-messages')}
@@ -66,6 +74,7 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaEnvelope className="mr-3" /> Pesan Masuk
                                 </button>
                             </li>
+                             {/* Menu Blog Posts */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('posts')}
@@ -74,6 +83,7 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaImage className="mr-3" /> Blog Posts
                                 </button>
                             </li>
+                            {/* Menu Manajemen Paket */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('packages')}
@@ -82,6 +92,7 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaCameraRetro className="mr-3" /> Manajemen Paket
                                 </button>
                             </li>
+                            {/* Menu Rekapan Keuangan */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('financial-report')}
@@ -90,6 +101,7 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                                     <FaChartLine className="mr-3" /> Rekapan Keuangan
                                 </button>
                             </li>
+                             {/* Menu Manajemen Portfolio */}
                             <li className="mb-2">
                                 <button
                                     onClick={() => setActiveTab('portfolio')}
@@ -102,14 +114,15 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                     </nav>
                 </div>
                 <div className="mt-8">
-                    <Link
-                        to="/admin/login"
+                    <button
+                        onClick={handleLogout}
                         className="w-full flex items-center p-3 rounded-lg text-red-500 hover:bg-red-100 transition-colors duration-200"
                     >
                         <FaSignOutAlt className="mr-3" /> Logout
-                    </Link>
+                    </button>
                 </div>
             </aside>
+            {/* Main Content */}
             <main className="flex-1 p-8 overflow-y-auto">{children}</main>
         </div>
     );
