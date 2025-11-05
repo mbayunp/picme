@@ -28,12 +28,27 @@ exports.findAll = (req, res) => {
     });
 };
 
-// Menambahkan paket baru (Sudah di-update dengan 'is_active')
 exports.create = (req, res) => {
-    // Tambahkan 'is_active' dari req.body
-    const { nama_paket, harga, deskripsi_paket, studio_name, image_url, is_active } = req.body;
+    // Ambil juga 'waktu_durasi' dari req.body
+    const { nama_paket, harga, deskripsi_paket, studio_name, image_url, is_active, waktu_durasi } = req.body;
     
     const parsedHarga = parseInt(harga, 10);
+
+    // --- TAMBAHKAN LOGIKA VALIDASI DURASI INI (disalin dari 'update') ---
+    let finalDurasi = null; // Default NULL
+    if (waktu_durasi !== null && waktu_durasi !== undefined && waktu_durasi !== '') {
+        const parsedDurasi = parseInt(waktu_durasi, 10);
+        // Validasi durasi (1-30 menit)
+        if (!isNaN(parsedDurasi) && parsedDurasi > 0 && parsedDurasi <= 30) {
+            finalDurasi = parsedDurasi;
+        } else {
+            // Jika durasi diisi tapi tidak valid, kirim error
+            return res.status(400).send({
+                message: "Durasi tidak valid. Masukkan angka antara 1 dan 30 menit, atau kosongkan."
+            });
+        }
+    }
+    // --- AKHIR BLOK LOGIKA DURASI ---
 
     // Validasi data yang diterima
     if (!nama_paket || isNaN(parsedHarga) || !deskripsi_paket || !studio_name || !image_url) {
@@ -48,8 +63,8 @@ exports.create = (req, res) => {
         deskripsi_paket,
         studio_name,
         image_url, // ✅ Gunakan URL lengkap dari body (sesuai frontend Anda)
-        // ✅ Konversi 'true' (string dari form-data) atau true (boolean) ke 1, selain itu 0
-        is_active: is_active === 'true' || is_active === true ? 1 : 0
+        is_active: is_active === 'true' || is_active === true ? 1 : 0,
+        waktu_durasi: finalDurasi // ✅ Tambahkan 'waktu_durasi' di sini
     };
 
     connection.query("INSERT INTO packages SET ?", newPackage, (err, data) => {
@@ -62,14 +77,13 @@ exports.create = (req, res) => {
     });
 };
 
+// Fungsi update Anda sudah benar (tidak diubah)
 exports.update = (req, res) => {
     const packageId = req.params.id;
-    // PERUBAHAN DURASI: Ambil waktu_durasi dari body
     const { nama_paket, harga, deskripsi_paket, studio_name, image_url, is_active, waktu_durasi } = req.body;
 
     const parsedHarga = parseInt(harga, 10);
 
-    // PERUBAHAN DURASI: Proses dan validasi durasi (logika sama seperti create)
     let finalDurasi = null;
     if (waktu_durasi !== null && waktu_durasi !== undefined && waktu_durasi !== '') {
         const parsedDurasi = parseInt(waktu_durasi, 10);
@@ -82,7 +96,6 @@ exports.update = (req, res) => {
         }
     }
 
-    // Validasi data utama
     if (!nama_paket || isNaN(parsedHarga) || parsedHarga < 0 || !deskripsi_paket || !studio_name || !image_url) {
         return res.status(400).send({ message: "Data paket tidak lengkap atau tidak valid." });
     }
@@ -109,7 +122,7 @@ exports.update = (req, res) => {
     });
 };
 
-// Menghapus paket (Tidak perlu diubah)
+// Menghapus paket (Tidak diubah)
 exports.delete = (req, res) => {
     const packageId = req.params.id;
 
@@ -119,7 +132,6 @@ exports.delete = (req, res) => {
         }
         if (result.length > 0) {
             const oldImage = result[0].image_url;
-            // Pastikan oldImage ada dan bukan string kosong
             if (oldImage) {
                 const imagePath = path.join(__dirname, '..', '..', 'public', oldImage);
                 if (fs.existsSync(imagePath)) {
@@ -142,20 +154,25 @@ exports.delete = (req, res) => {
     });
 };
 
-// ⭐️ BARU: Fungsi untuk toggle status aktif/nonaktif
+
+// ===============================================
+// ⭐️ PERBAIKAN 2: Mengirim 1/0 (bukan true/false)
+// ===============================================
 exports.toggleStatus = (req, res) => {
   const packageId = req.params.id;
-  // Ambil status baru dari body. Frontend mengirim { is_active: true } atau { is_active: false }
-  const { is_active } = req.body;
+  const { is_active } = req.body; // Ini adalah boolean (true/false) dari JSON
 
-  // Validasi sederhana
+  // Validasi sederhana (sudah benar)
   if (typeof is_active !== 'boolean') {
     return res.status(400).send({ message: "Status 'is_active' (boolean) wajib diisi." });
   }
 
+  // Kirim 1 untuk true, 0 untuk false agar konsisten
+  const newStatusAsInt = is_active ? 1 : 0;
+
   connection.query(
     "UPDATE packages SET is_active = ? WHERE id = ?",
-    [is_active, packageId],
+    [newStatusAsInt, packageId], // ✅ Menggunakan 1 atau 0
     (err, result) => {
       if (err) {
         console.error("Error updating package status:", err);

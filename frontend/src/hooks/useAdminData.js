@@ -472,6 +472,13 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         }
     }, [activeTab, fetchAllBookings, bookingPagination.currentPage, isAuthenticated]); // Dependencies
 
+    useEffect(() => {
+  if (activeTab === 'beranda' && isAuthenticated) {
+    fetchDashboardData(selectedStudio);
+  }
+}, [activeTab, selectedStudio, isAuthenticated, fetchDashboardData]);
+
+
     // --- Pagination handlers (tidak berubah) ---
     const setCustomerPage = useCallback((page) => {
         if (page > 0 && page <= customerPagination.totalPages) {
@@ -574,6 +581,7 @@ const useAdminData = (activeTab, selectedStudio, selectedCustomer) => {
         dashboardData,
         // Status autentikasi jika perlu diakses dari luar hook
         isAuthenticated,
+        fetchDashboardData,
     };
 };
 

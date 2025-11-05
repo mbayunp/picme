@@ -135,14 +135,14 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
                 showModal('Berhasil', 'Paket berhasil diperbarui!');
             } else {
                  if (!finalFormData.has('image_url')) {
-                    console.log('Validation failed: image_url missing in FormData before POST.');
-                   showModal('Gagal', 'URL gambar tidak siap untuk dikirim. Coba lagi.');
-                   return;
+                     console.log('Validation failed: image_url missing in FormData before POST.');
+                    showModal('Gagal', 'URL gambar tidak siap untuk dikirim. Coba lagi.');
+                    return;
                  }
                  console.log('Sending POST request to add new package...');
                  // Ganti axios.post dengan axiosInstance.post jika pakai instance
-                await axios.post(`${API_URL}/api/packages`, finalFormData, packageConfig);
-                showModal('Berhasil', 'Paket berhasil ditambahkan!');
+                 await axios.post(`${API_URL}/api/packages`, finalFormData, packageConfig);
+                 showModal('Berhasil', 'Paket berhasil ditambahkan!');
             }
 
              console.log('Package added/updated successfully. Resetting form...');
@@ -171,6 +171,10 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
         window.scrollTo({ top: 0, behavior: 'smooth' });
      };
     const handleCancelEdit = () => { resetForm(); };
+    
+    // ===============================================
+    // ⭐️ PERBAIKAN DI SINI (baris ~181)
+    // ===============================================
     const handleToggleStatus = async (pkg) => {
         const currentIsActive = pkg.is_active === 1 || pkg.is_active === true;
         const newStatus = !currentIsActive; // Toggle boolean
@@ -178,8 +182,10 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
         try {
             const token = localStorage.getItem('admin-token');
             const config = { headers: { 'x-access-token': token } };
-            // Ganti axios.put dengan axiosInstance.put jika pakai instance
-            await axios.put(`${API_URL}/api/packages/${pkg.id}/status`, { is_active: newStatus }, config);
+            
+            // ✅ Mengganti .put menjadi .patch agar sesuai dengan backend
+            await axios.patch(`${API_URL}/api/packages/${pkg.id}/status`, { is_active: newStatus }, config);
+            
             showModal('Berhasil', `Paket berhasil di${actionText}.`);
             fetchPackages();
         } catch (error) {
@@ -295,7 +301,7 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
                                          {(pkg.is_active === 1 || pkg.is_active === true) ? 'Nonaktifkan' : 'Aktifkan'}
                                      </button>
                                      <button onClick={() => handleDelete('packages', pkg.id, 'Paket berhasil dihapus!', 'Gagal menghapus paket.', fetchPackages)} className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition text-xs sm:text-sm">Hapus</button>
-                                 </div>
+                                </div>
                             </div>
                         ))
                     ) : ( <p className="text-center text-gray-500 py-4">Tidak ada paket yang cocok dengan filter.</p> )}
@@ -306,4 +312,3 @@ const PackagesManager = ({ packages, fetchPackages, showModal, handleDelete }) =
 };
 
 export default PackagesManager;
-

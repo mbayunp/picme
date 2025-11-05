@@ -149,8 +149,9 @@ const BookingsCalendar = ({ bookings, studios, selectedStudio, setSelectedStudio
                         onClose={handleCloseEventModal}
                         handleConfirmBooking={handleConfirmBooking}
                         handleCancelBooking={handleCancelBooking}
-                        handleDelete={handleDelete} // ✅ Perbaikan: Prop ini sekarang diteruskan.
+                        handleDelete={handleDelete}
                         showModal={showModal} 
+                        packages={packages}
                     />
                 </div>
             )}
