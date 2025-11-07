@@ -34,7 +34,6 @@ exports.create = (req, res) => {
     
     const parsedHarga = parseInt(harga, 10);
 
-    // --- TAMBAHKAN LOGIKA VALIDASI DURASI INI (disalin dari 'update') ---
     let finalDurasi = null; // Default NULL
     if (waktu_durasi !== null && waktu_durasi !== undefined && waktu_durasi !== '') {
         const parsedDurasi = parseInt(waktu_durasi, 10);
@@ -48,7 +47,6 @@ exports.create = (req, res) => {
             });
         }
     }
-    // --- AKHIR BLOK LOGIKA DURASI ---
 
     // Validasi data yang diterima
     if (!nama_paket || isNaN(parsedHarga) || !deskripsi_paket || !studio_name || !image_url) {
@@ -77,7 +75,6 @@ exports.create = (req, res) => {
     });
 };
 
-// Fungsi update Anda sudah benar (tidak diubah)
 exports.update = (req, res) => {
     const packageId = req.params.id;
     const { nama_paket, harga, deskripsi_paket, studio_name, image_url, is_active, waktu_durasi } = req.body;
@@ -133,10 +130,25 @@ exports.delete = (req, res) => {
         if (result.length > 0) {
             const oldImage = result[0].image_url;
             if (oldImage) {
-                const imagePath = path.join(__dirname, '..', '..', 'public', oldImage);
-                if (fs.existsSync(imagePath)) {
+                // Perbaikan path jika image_url adalah path lengkap, bukan hanya nama file
+                const imagePath = path.join(__dirname, '..', '..', 'public', oldImage); 
+                
+                // Cek jika path mengandung '/api/assets/' (URL frontend)
+                if (oldImage.startsWith('/api/assets/images/')) {
+                    // Adjust path to remove the frontend URL part
+                    const relativePath = oldImage.replace('/api/assets/images/', '');
+                    // Asumsi public folder di root backend atau /public
+                    const correctedPath = path.join(__dirname, '..', '..', 'public', 'assets', 'images', relativePath);
+                    
+                    if (fs.existsSync(correctedPath)) {
+                         fs.unlink(correctedPath, (unlinkErr) => {
+                             if (unlinkErr) console.error("Gagal menghapus file lama:", unlinkErr);
+                         });
+                    }
+                } else if (fs.existsSync(imagePath)) {
+                    // Logika lama (jika oldImage adalah path relatif biasa)
                     fs.unlink(imagePath, (unlinkErr) => {
-                        if (unlinkErr) console.error("Gagal menghapus file lama:", unlinkErr);
+                         if (unlinkErr) console.error("Gagal menghapus file lama:", unlinkErr);
                     });
                 }
             }
@@ -155,33 +167,32 @@ exports.delete = (req, res) => {
 };
 
 
-// ===============================================
-// ⭐️ PERBAIKAN 2: Mengirim 1/0 (bukan true/false)
-// ===============================================
+// ⭐️ PERBAIKAN: Fungsi toggleStatus
+// Karena error 500 terjadi, kita pastikan logicnya sederhana
 exports.toggleStatus = (req, res) => {
-  const packageId = req.params.id;
-  const { is_active } = req.body; // Ini adalah boolean (true/false) dari JSON
+    const packageId = req.params.id;
+    const { is_active } = req.body; // Ini adalah boolean (true/false) dari JSON
 
-  // Validasi sederhana (sudah benar)
-  if (typeof is_active !== 'boolean') {
-    return res.status(400).send({ message: "Status 'is_active' (boolean) wajib diisi." });
-  }
-
-  // Kirim 1 untuk true, 0 untuk false agar konsisten
-  const newStatusAsInt = is_active ? 1 : 0;
-
-  connection.query(
-    "UPDATE packages SET is_active = ? WHERE id = ?",
-    [newStatusAsInt, packageId], // ✅ Menggunakan 1 atau 0
-    (err, result) => {
-      if (err) {
-        console.error("Error updating package status:", err);
-        res.status(500).send({ message: "Gagal memperbarui status paket." });
-      } else if (result.affectedRows === 0) {
-        res.status(404).send({ message: `Paket dengan ID ${packageId} tidak ditemukan.` });
-      } else {
-        res.send({ message: "Status paket berhasil diperbarui." });
-      }
+    if (typeof is_active !== 'boolean') {
+        return res.status(400).send({ message: "Status 'is_active' (boolean) wajib diisi." });
     }
-  );
+
+    // Menggunakan 1 atau 0 untuk TINYINT(1)
+    const newStatusAsInt = is_active ? 1 : 0;
+
+    connection.query(
+        "UPDATE packages SET is_active = ? WHERE id = ?",
+        [newStatusAsInt, packageId], 
+        (err, result) => {
+            if (err) {
+                // Log error server
+                console.error("Error updating package status:", err);
+                res.status(500).send({ message: "Gagal memperbarui status paket." });
+            } else if (result.affectedRows === 0) {
+                res.status(404).send({ message: `Paket dengan ID ${packageId} tidak ditemukan.` });
+            } else {
+                res.send({ message: "Status paket berhasil diperbarui." });
+            }
+        }
+    );
 };

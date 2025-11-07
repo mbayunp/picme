@@ -55,7 +55,7 @@ function ServicesPage() {
     const [selectedModalPackage, setSelectedModalPackage] = useState(null);
     const [isCartOpen, setIsCartOpen] = useState(false);
 
-    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [setShowSuccessPopup] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
 
     const studios = [
@@ -343,12 +343,14 @@ function ServicesPage() {
             )}
 
             {step === 0 && (
+                // eslint-disable-next-line react/jsx-pascal-case
                 <Step0_SelectStudio
                     studios={studios} selectedStudio={selectedStudio} onSelectStudio={handleStudioSelect} onContinue={handleContinueToPackages}
                 />
             )}
             {step === 1 && (
                 <>
+                    {/* eslint-disable-next-line react/jsx-pascal-case */}
                     <Step1_SelectPackage
                         selectedStudio={selectedStudio} groupedPackages={groupedPackages} loadingPackages={loadingPackages} onOpenModal={handleOpenDetailModal} onBack={() => setStep(0)}
                     />
@@ -418,6 +420,7 @@ function ServicesPage() {
                 </>
             )}
             {step === 2 && (
+                // eslint-disable-next-line react/jsx-pascal-case
                 <Step2_SelectDateTime
                     selectedStudio={selectedStudio} selectedDate={selectedDate} availableSlots={availableSlots} loadingSlots={loadingSlots} dateMode={dateMode} onBack={() => setStep(1)} onContinue={() => setStep(3)} onSelectDate={setSelectedDate} onSelectSlot={handleSlotClick} onSetDateMode={setDateMode} onPrevWeek={handlePrevWeek} onNextWeek={handleNextWeek} getWeekDays={getWeekDays} getDayName={getDayName} formData={formData} selectedPackage={selectedPackage}
                 />
