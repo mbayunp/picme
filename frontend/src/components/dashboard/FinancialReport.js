@@ -1,78 +1,103 @@
-// src/components/dashboard/FinancialReport.js
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-// 1. Ganti axios dengan axiosInstance
-import axiosInstance from '../../api/axiosInstance'; // <-- Pastikan path ini benar
+import axiosInstance from '../../api/axiosInstance'; 
 import moment from 'moment';
 import 'moment/locale/id';
-import { Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  PointElement,
+  LineElement,
   Title,
   Tooltip,
   Legend,
+  Filler
 } from 'chart.js';
-import { FaClock } from 'react-icons/fa'; // Impor ikon
+import { FaClock, FaMoneyBillWave, FaChartLine, FaCalendarAlt } from 'react-icons/fa'; 
 
-// Registrasi ChartJS dan set lokal Moment
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+// Registrasi ChartJS
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 moment.locale('id');
 
-const API_URL = process.env.REACT_APP_API_URL;
-
-// Fungsi helper (tidak berubah)
+// --- Helper Functions ---
 const calculateTotalPrice = (item) => {
   const price = parseInt(item.package_price, 10) || 0;
   const quantity = parseInt(item.jumlah_orang, 10) || 1;
   return price * quantity;
 };
 
+const formatCurrency = (amount) => {
+    const numericAmount = parseFloat(amount) || 0;
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(numericAmount);
+};
+
+// --- Komponen Kartu Statistik Kecil ---
+const StatCard = ({ title, value, icon, color, subtext }) => (
+    <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
+        <div>
+            <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>
+            <h3 className="text-2xl font-bold text-gray-800">{value}</h3>
+            {subtext && <p className="text-xs text-gray-400 mt-1">{subtext}</p>}
+        </div>
+        <div className={`p-3 rounded-full ${color} text-white text-lg`}>
+            {icon}
+        </div>
+    </div>
+);
+
 // ====================================================================
-// 1. KOMPONEN FINANCIALSUMMARY (Ini adalah kode lama Anda)
+// 1. KOMPONEN FINANCIAL SUMMARY (LOGIKA UTAMA)
 // ====================================================================
-const FinancialSummary = ({ packages, studios }) => { // Terima props
-  // State (Inisialisasi rawReportData sebagai array kosong)
+const FinancialSummary = ({ packages, studios }) => { 
   const [rawReportData, setRawReportData] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filterType, setFilterType] = useState('monthly');
+  
+  // Filter States
+  const [filterType, setFilterType] = useState('monthly'); // daily, weekly, monthly
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
   const [filterMonth, setFilterMonth] = useState(moment().month() + 1);
   const [filterYear, setFilterYear] = useState(moment().year());
-  const [filterStudio, setFilterStudio] = useState('');
+  const [filterStudio, setFilterStudio] = useState(''); // Kosong = Semua Studio
   const [chartViewType, setChartViewType] = useState('daily');
 
-  // apiParams (tidak berubah)
+  // 🛠️ PERBAIKAN 1: Logika Params untuk "Semua Studio"
   const apiParams = useMemo(() => {
-    const baseParams = { studio_name: filterStudio };
-    if (filterType === 'monthly') {
-      return { ...baseParams, month: filterMonth, year: filterYear };
+    const params = {};
+
+    // Hanya tambahkan studio_name jika TIDAK kosong. 
+    // Jika kosong, backend akan menganggapnya "Semua Studio".
+    if (filterStudio && filterStudio !== '') {
+        params.studio_name = filterStudio;
     }
-    const date = moment(selectedDate);
-    return { ...baseParams, month: date.month() + 1, year: date.year() };
+
+    if (filterType === 'monthly') {
+      params.month = filterMonth;
+      params.year = filterYear;
+    } else {
+      // Untuk harian/mingguan, kita tetap ambil data bulanan dari tanggal yang dipilih
+      // agar user bisa switch view tanpa fetch ulang terus menerus
+      const date = moment(selectedDate);
+      params.month = date.month() + 1;
+      params.year = date.year();
+    }
+    
+    return params;
   }, [filterType, filterMonth, filterYear, selectedDate, filterStudio]);
 
-  // fetchFinancialData (DIPERBARUI: Gunakan axiosInstance)
+  // Fetch Data
   const fetchFinancialData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      console.log('🔎 Fetching financial data with params:', apiParams);
-      
-      // Ganti axios.get dengan axiosInstance.get dan hapus config token
-      const response = await axiosInstance.get(
-        `/api/services/financial-report`, // Gunakan path relatif
-        { 
-          params: apiParams,
-          headers: { 'Cache-Control': 'no-cache' } // Header cache
-        }
-      );
+      const response = await axiosInstance.get('/api/services/financial-report', { 
+        params: apiParams,
+        headers: { 'Cache-Control': 'no-cache' } 
+      });
       setRawReportData(response.data || []);
     } catch (err) {
-       // Interceptor akan menangani 401 (redirect)
        if (err.response?.status !== 401) {
           console.error('❌ Error fetching financial report:', err);
           setError('Gagal memuat laporan keuangan.');
@@ -86,267 +111,288 @@ const FinancialSummary = ({ packages, studios }) => { // Terima props
     fetchFinancialData();
   }, [fetchFinancialData]);
 
-  // --- Fungsi Helper (tidak berubah) ---
-  const formatCurrency = (amount) => {
-     const numericAmount = parseFloat(amount) || 0;
-     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(numericAmount);
-  };
-  const formatShortDate = (dateString) => {
-     return moment(dateString).format('DD/MM/YYYY');
-  };
-  const getMonths = () => {
-     return moment.months().map((month, index) => ({ value: index + 1, label: month.charAt(0).toUpperCase() + month.slice(1) }));
-  };
-  const getYears = () => {
-     const currentYear = new Date().getFullYear();
-     const years = [];
-     for (let i = currentYear - 5; i <= currentYear + 1; i++) { years.push(i); }
-     return years;
-  };
-  const getFilterLabel = () => {
-     if (filterType === 'monthly') {
-         const monthName = moment.months(filterMonth - 1);
-         return `Bulan: ${monthName} ${filterYear}`;
-     }
-     if (filterType === 'weekly') {
-         const start = moment(selectedDate).startOf('week').format('DD MMM');
-         const end = moment(selectedDate).endOf('week').format('DD MMM YYYY');
-         return `Minggu: ${start} - ${end}`;
-     }
-     if (filterType === 'daily') {
-         return `Tanggal: ${moment(selectedDate).format('DD MMMM YYYY')}`;
-     }
-     return 'Laporan Keuangan';
-  };
-  // ---------------------------------
-
-  // --- useMemo (DIPERBARUI: Tambah penjagaan/fallback || []) ---
+  // --- Filtering Data di Frontend (Untuk Tabel & Total) ---
   const filteredData = useMemo(() => {
-     const dataToFilter = rawReportData || []; // Penjagaan
-     let data = dataToFilter;
-     if (filterType === 'daily') {
-       data = dataToFilter.filter((item) => moment(item.tanggal).isSame(selectedDate, 'day'));
-     } else if (filterType === 'weekly') {
-       data = dataToFilter.filter((item) => moment(item.tanggal).isSame(selectedDate, 'week'));
-     }
-     return data;
+      const dataToFilter = rawReportData || [];
+      
+      if (filterType === 'daily') {
+        return dataToFilter.filter((item) => moment(item.tanggal).isSame(selectedDate, 'day'));
+      } else if (filterType === 'weekly') {
+        return dataToFilter.filter((item) => moment(item.tanggal).isSame(selectedDate, 'week'));
+      }
+      // Monthly (default) - return semua data yang di-fetch (karena fetch per bulan)
+      return dataToFilter;
   }, [rawReportData, filterType, selectedDate]);
 
-  const filteredTotalRevenue = useMemo(() => {
-     return (filteredData || []).reduce((sum, item) => sum + calculateTotalPrice(item), 0); // Penjagaan
+  // --- Kalkulasi Total (Berdasarkan Filter yang Dipilih) ---
+  const currentViewRevenue = useMemo(() => {
+      return filteredData.reduce((sum, item) => sum + calculateTotalPrice(item), 0);
   }, [filteredData]);
 
-  const aggregatedChartData = useMemo(() => {
-     let revenueData = {};
-     (filteredData || []).forEach((item) => { // Penjagaan
-       const price = calculateTotalPrice(item);
-       let key;
-       if (chartViewType === 'daily') key = moment(item.tanggal).format('DD MMM');
-       else if (chartViewType === 'weekly') key = `${moment(item.tanggal).startOf('week').format('DD MMM')} - ${moment(item.tanggal).endOf('week').format('DD MMM')}`;
-       else if (chartViewType === 'monthly') key = moment(item.tanggal).format('MMMM');
-       
-       if(key) revenueData[key] = (revenueData[key] || 0) + price;
-     });
-     
-     const sortedKeys = Object.keys(revenueData).sort((a, b) => {
-         if (chartViewType === 'daily') return moment(a, 'DD MMM').diff(moment(b, 'DD MMM'));
-         if (chartViewType === 'weekly') return moment(a.split(' ')[0], 'DD MMM').diff(moment(b.split(' ')[0], 'DD MMM'));
-         if (chartViewType === 'monthly') return moment(a, 'MMMM', 'id').month() - moment(b, 'MMMM', 'id').month();
-         return 0;
-     });
-     const labels = sortedKeys;
-     const revenues = labels.map((key) => revenueData[key]);
-     return {
-       labels,
-       datasets: [{ label: `Pendapatan (${chartViewType})`, data: revenues, backgroundColor: 'rgba(54, 162, 235, 0.6)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1 }],
-     };
+  // 🛠️ PERBAIKAN 2: Statistik 7 Hari Terakhir (Global dari data yang ada)
+  // Note: Ini menghitung dari rawReportData. Jika rawReportData hanya memuat bulan ini,
+  // maka 7 hari terakhir yang lintas bulan mungkin terpotong. 
+  // (Idealnya fetch endpoint khusus statistik dashboard, tapi ini solusi cepat frontend).
+  const last7DaysRevenue = useMemo(() => {
+      const sevenDaysAgo = moment().subtract(6, 'days').startOf('day');
+      const today = moment().endOf('day');
+
+      return (rawReportData || [])
+          .filter(item => {
+              const itemDate = moment(item.tanggal);
+              return itemDate.isBetween(sevenDaysAgo, today, undefined, '[]');
+          })
+          .reduce((sum, item) => sum + calculateTotalPrice(item), 0);
+  }, [rawReportData]);
+
+  // --- Chart Data Preparation ---
+  const chartData = useMemo(() => {
+      let revenueData = {};
+      
+      filteredData.forEach((item) => { 
+        const price = calculateTotalPrice(item);
+        let key;
+        
+        if (chartViewType === 'daily') {
+            key = moment(item.tanggal).format('DD MMM');
+        } else if (chartViewType === 'weekly') {
+            const start = moment(item.tanggal).startOf('week').format('DD MMM');
+            const end = moment(item.tanggal).endOf('week').format('DD MMM');
+            key = `${start} - ${end}`;
+        } else {
+            key = moment(item.tanggal).format('MMMM');
+        }
+        
+        if(key) revenueData[key] = (revenueData[key] || 0) + price;
+      });
+      
+      // Sorting Keys (Chronological)
+      const sortedKeys = Object.keys(revenueData).sort((a, b) => {
+          if (chartViewType === 'daily') return moment(a, 'DD MMM').toDate() - moment(b, 'DD MMM').toDate();
+          return 0; 
+      });
+
+      return {
+        labels: sortedKeys,
+        datasets: [{ 
+            label: 'Pendapatan', 
+            data: sortedKeys.map(k => revenueData[k]), 
+            backgroundColor: 'rgba(16, 185, 129, 0.2)', // Green-500 transparent
+            borderColor: 'rgba(16, 185, 129, 1)',       // Green-500 solid
+            borderWidth: 2,
+            tension: 0.3, // Garis melengkung sedikit
+            fill: true
+        }],
+      };
   }, [filteredData, chartViewType]);
 
   const chartOptions = {
       responsive: true,
-      plugins: { legend: { position: 'top' }, title: { display: true, text: `Laporan Keuangan ${chartViewType.charAt(0).toUpperCase() + chartViewType.slice(1)}` } },
-      scales: { y: { beginAtZero: true, title: { display: true, text: 'Pendapatan (Rp)' } } }
+      maintainAspectRatio: false,
+      plugins: { 
+          legend: { display: false }, 
+          tooltip: { callbacks: { label: (ctx) => ` ${formatCurrency(ctx.parsed.y)}` } }
+      },
+      scales: { 
+          y: { beginAtZero: true, grid: { borderDash: [2, 4] }, ticks: { callback: (val) => val >= 1000 ? `${val/1000}k` : val } },
+          x: { grid: { display: false } }
+      }
   };
-  // ---------------------------------
 
-  if (loading) return <div className="text-center mt-8">Memuat laporan keuangan...</div>;
-  if (error) return <div className="text-center mt-8 text-red-500">{error}</div>;
+  // --- Helpers untuk Dropdown ---
+  const getFilterLabel = () => {
+      if (filterType === 'monthly') return `Bulan ${moment.months(filterMonth - 1)} ${filterYear}`;
+      if (filterType === 'weekly') return `Minggu ${moment(selectedDate).startOf('week').format('DD MMM')} - ${moment(selectedDate).endOf('week').format('DD MMM')}`;
+      return `Tanggal ${moment(selectedDate).format('DD MMM YYYY')}`;
+  };
+
+  if (loading) return <div className="p-8 text-center text-gray-500">Memuat laporan keuangan...</div>;
+  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   return (
-    // Ini adalah konten untuk "Ringkasan keuangan"
     <div className="flex-grow flex flex-col space-y-6">
-      {/* --- Filter controls (dimasukkan ke card) --- */}
-      <div className="flex flex-col space-y-4 bg-white p-4 rounded-lg shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold">Tipe Filter:</span>
-          <button onClick={() => setFilterType('daily')} className={`p-2 rounded-md text-sm ${filterType === 'daily' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}>Harian</button>
-          <button onClick={() => setFilterType('weekly')} className={`p-2 rounded-md text-sm ${filterType === 'weekly' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}>Mingguan</button>
-          <button onClick={() => setFilterType('monthly')} className={`p-2 rounded-md text-sm ${filterType === 'monthly' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}>Bulanan</button>
+      
+      {/* --- Bagian Filter --- */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row gap-4 items-end justify-between">
+        <div className="flex flex-col gap-4 w-full md:w-auto">
+            {/* Tipe Filter */}
+            <div className="flex bg-gray-100 p-1 rounded-lg self-start">
+                {['daily', 'weekly', 'monthly'].map(type => (
+                    <button 
+                        key={type}
+                        onClick={() => setFilterType(type)} 
+                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${filterType === type ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        {type === 'daily' ? 'Harian' : type === 'weekly' ? 'Mingguan' : 'Bulanan'}
+                    </button>
+                ))}
+            </div>
+            
+            {/* Input Tanggal/Bulan */}
+            <div className="flex gap-2">
+                {filterType === 'monthly' ? (
+                    <>
+                        <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="p-2 border rounded-md text-sm bg-gray-50">
+                            {moment.months().map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                        </select>
+                        <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="p-2 border rounded-md text-sm bg-gray-50">
+                            {Array.from({length: 5}, (_, i) => moment().year() - 2 + i).map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                    </>
+                ) : (
+                    <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="p-2 border rounded-md text-sm bg-gray-50"/>
+                )}
+            </div>
         </div>
 
-        <div className="flex flex-wrap items-end gap-4">
-          {filterType === 'monthly' ? (
-            <>
-              <div><label className="block text-sm font-medium text-gray-700">Bulan</label><select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="p-2 border rounded-md">{getMonths().map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}</select></div>
-              <div><label className="block text-sm font-medium text-gray-700">Tahun</label><select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="p-2 border rounded-md">{getYears().map((y) => (<option key={y} value={y}>{y}</option>))}</select></div>
-            </>
-          ) : (
-            <div><label className="block text-sm font-medium text-gray-700">Pilih Tanggal</label><input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="p-2 border rounded-md"/></div>
-          )}
-          
-          {/* PERBAIKAN MAP STUDIOS */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Studio</label>
-            <select value={filterStudio} onChange={(e) => setFilterStudio(e.target.value)} className="p-2 border rounded-md bg-white">
-              <option value="">Semua Studio</option>
-              {/* Tambahkan fallback || [] untuk 'studios' prop */}
-              {(studios || []).map((studio) => (
-                <option key={studio.id || studio.name} value={studio.name}>{studio.name}</option> 
-              ))}
+        {/* Filter Studio */}
+        <div className="w-full md:w-64">
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Filter Studio</label>
+            <select value={filterStudio} onChange={(e) => setFilterStudio(e.target.value)} className="w-full p-2.5 border rounded-lg bg-gray-50 text-sm font-medium">
+                <option value="">Semua Studio</option>
+                {(studios || []).map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
             </select>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-          <span className="font-semibold">Tampilan Chart:</span>
-          <button onClick={() => setChartViewType('daily')} className={`p-2 rounded-md text-sm ${chartViewType === 'daily' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-800'}`}>Harian</button>
-          <button onClick={() => setChartViewType('weekly')} className={`p-2 rounded-md text-sm ${chartViewType === 'weekly' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-800'}`}>Mingguan</button>
-          <button onClick={() => setChartViewType('monthly')} className={`p-2 rounded-md text-sm ${chartViewType === 'monthly' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-800'}`}>Bulanan</button>
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <Bar data={aggregatedChartData} options={chartOptions} />
+      {/* --- Statistik Cards --- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Card 1: Pendapatan Sesuai Filter */}
+          <StatCard 
+             title={`Pendapatan (${filterType === 'daily' ? 'Hari Ini' : filterType === 'weekly' ? 'Minggu Ini' : 'Bulan Ini'})`}
+             value={formatCurrency(currentViewRevenue)}
+             icon={<FaMoneyBillWave />}
+             color="bg-blue-500"
+             subtext={getFilterLabel()}
+          />
+
+          {/* Card 2: Pendapatan 7 Hari Terakhir (Fixed) */}
+          <StatCard 
+             title="Pendapatan 7 Hari Terakhir"
+             value={formatCurrency(last7DaysRevenue)}
+             icon={<FaChartLine />}
+             color="bg-green-500"
+             subtext="Rolling 7 days"
+          />
+
+          {/* Card 3: Total Transaksi (Filter View) */}
+          <StatCard 
+             title="Total Transaksi"
+             value={`${filteredData.length} Booking`}
+             icon={<FaCalendarAlt />}
+             color="bg-purple-500"
+             subtext="Sesuai filter aktif"
+          />
       </div>
 
-      {/* Total Revenue */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center">
-          <p className="text-lg font-semibold">Total Pendapatan ({getFilterLabel()}):</p>
-          <p className="text-3xl font-bold text-green-600">{formatCurrency(filteredTotalRevenue)}</p>
+      {/* --- Grafik --- */}
+      <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+        <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-gray-800">Grafik Pendapatan</h3>
+            <div className="flex gap-2">
+                {['daily', 'weekly'].map(view => (
+                    <button 
+                        key={view}
+                        onClick={() => setChartViewType(view)} 
+                        className={`text-xs px-3 py-1 rounded-full border ${chartViewType === view ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-gray-200 text-gray-500'}`}
+                    >
+                        View {view === 'daily' ? 'Harian' : 'Mingguan'}
+                    </button>
+                ))}
+            </div>
+        </div>
+        <div className="h-80">
+            <Line data={chartData} options={chartOptions} />
         </div>
       </div>
 
-      {/* Tabel Data */}
-      <div className="flex-grow overflow-y-auto bg-white rounded-lg shadow-sm" style={{ minHeight: '400px' }}>
-        <table className="min-w-full divide-y divide-gray-200">
-           <thead className="bg-gray-50 sticky top-0">
-             <tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Pelanggan</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Paket</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Studio</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Harga</th></tr>
-           </thead>
-           <tbody className="bg-white divide-y divide-gray-200">
-             {/* PERBAIKAN MAP filteredData */}
-             {(filteredData || []).length > 0 ? ( 
-               (filteredData || []).map((item) => ( 
-                 <tr key={item.id}>
-                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatShortDate(item.tanggal)}</td>
-                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.customer_name || '-'}</td>
-                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.package_name || 'Tanpa Paket'}</td>
-                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.studio_name}</td>
-                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{formatCurrency(calculateTotalPrice(item))}</td>
+      {/* --- Tabel Data Rinci --- */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h3 className="font-bold text-gray-700">Rincian Transaksi</h3>
+        </div>
+        <div className="overflow-x-auto max-h-96">
+            <table className="min-w-full divide-y divide-gray-200">
+               <thead className="bg-gray-50 sticky top-0 z-10">
+                 <tr>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Tanggal</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Pelanggan</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Paket</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Studio</th>
+                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Total</th>
                  </tr>
-               ))
-             ) : (
-               <tr><td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">Tidak ada data booking dengan status 'selesai' untuk filter ini.</td></tr>
-             )}
-           </tbody>
-        </table>
+               </thead>
+               <tbody className="bg-white divide-y divide-gray-200">
+                 {filteredData.length > 0 ? (
+                   filteredData.map((item) => (
+                     <tr key={item.id} className="hover:bg-gray-50">
+                       <td className="px-6 py-3 text-sm text-gray-500">{moment(item.tanggal).format('DD/MM/YYYY')}</td>
+                       <td className="px-6 py-3 text-sm font-medium text-gray-900">{item.customer_name || item.nama || '-'}</td>
+                       <td className="px-6 py-3 text-sm text-gray-500">{item.package_name || 'Tanpa Paket'}</td>
+                       <td className="px-6 py-3 text-sm text-gray-500">{item.studio_name}</td>
+                       <td className="px-6 py-3 text-sm text-green-600 font-bold text-right">{formatCurrency(calculateTotalPrice(item))}</td>
+                     </tr>
+                   ))
+                 ) : (
+                   <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500">Tidak ada data transaksi.</td></tr>
+                 )}
+               </tbody>
+            </table>
+        </div>
       </div>
     </div>
   );
 };
 
-// ====================================================================
-// 2. KOMPONEN STUB (Placeholder untuk sub-menu lain)
-// ====================================================================
-const PaymentSummary = () => {
-  return (
-    <div className="p-6 bg-white rounded-lg shadow-md">
-      <h3 className="text-xl font-bold mb-4">Ringkasan Pembayaran</h3>
-      <p className="text-gray-600">Fitur ini sedang dalam pengembangan.</p>
-    </div>
-  );
-};
-
-const PaymentLog = () => {
-  return (
-    <div className="p-6 bg-white rounded-lg shadow-md">
-      <h3 className="text-xl font-bold mb-4">Log Pembayaran</h3>
-      <p className="text-gray-600">Fitur ini sedang dalam pengembangan.</p>
-    </div>
-  );
-};
-
+// ... (Kode PaymentSummary & PaymentLog placeholder tetap sama) ...
+const PaymentSummary = () => (<div className="p-6 bg-white rounded-lg shadow-md"><h3 className="text-xl font-bold">Ringkasan Pembayaran</h3><p>Coming soon.</p></div>);
+const PaymentLog = () => (<div className="p-6 bg-white rounded-lg shadow-md"><h3 className="text-xl font-bold">Log Pembayaran</h3><p>Coming soon.</p></div>);
 
 // ====================================================================
-// 3. KOMPONEN KONTAINER BARU (Yang akan diekspor)
+// 3. KOMPONEN KONTAINER UTAMA
 // ====================================================================
 const FinancialReport = ({ packages, studios }) => {
-  // State untuk mengelola sub-tab yang aktif
-  const [activeSubTab, setActiveSubTab] = useState('summary'); // 'summary', 'payment', 'log'
+  const [activeSubTab, setActiveSubTab] = useState('summary');
 
-  // Fungsi untuk merender konten sub-menu yang sesuai
-  const renderSubContent = () => {
-    switch (activeSubTab) {
-      case 'summary':
-        // Kirim props 'packages' dan 'studios' ke komponen ringkasan
-        return <FinancialSummary packages={packages} studios={studios} />;
-      case 'payment':
-        return <PaymentSummary />;
-      case 'log':
-        return <PaymentLog />;
-      default:
-        return <FinancialSummary packages={packages} studios={studios} />;
-    }
-  };
-
-  // Fungsi helper untuk styling tombol sub-menu
   const getButtonClass = (tabName) => {
-    const baseClass = "flex justify-between items-center w-full p-4 text-left font-medium text-gray-700 rounded-lg hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out";
-    const activeClass = "bg-blue-50 border-l-4 border-blue-600 text-blue-700";
-    const inactiveClass = "border-l-4 border-transparent";
-    return `${baseClass} ${activeSubTab === tabName ? activeClass : inactiveClass}`;
+    const base = "flex justify-between items-center w-full p-3 text-left font-medium rounded-lg transition duration-150 mb-1";
+    return activeSubTab === tabName 
+        ? `${base} bg-blue-50 text-blue-700` 
+        : `${base} text-gray-600 hover:bg-gray-100`;
   };
 
   return (
-    // Layout utama: Sidebar sub-menu di kiri dan Konten di kanan
-<div className="p-5 bg-gray-100 rounded-lg flex-grow flex flex-col lg:flex-row lg:items-start gap-6">      
-      {/* Sidebar Sub-menu (Kiri) */}
-      <aside className="w-full lg:w-1/4 xl:w-1/5 flex-shrink-0">
-        <div className="bg-white rounded-lg shadow-md p-6 sticky top-24"> {/* Dibuat sticky */}
-          {/* Header dari gambar */}
-          <div className="flex items-center gap-3 mb-4 pb-4 border-b">
-             <span className="text-gray-700"><FaClock size={28} /></span>
-             <h2 className="text-3xl font-bold text-gray-800">Keuangan</h2>
+    <div className="p-5 bg-gray-100 rounded-lg flex-grow flex flex-col lg:flex-row gap-6 min-h-[80vh]">
+      {/* Sidebar */}
+      <aside className="w-full lg:w-64 flex-shrink-0">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sticky top-24">
+          <div className="flex items-center gap-3 mb-6">
+             <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><FaClock size={20} /></div>
+             <h2 className="text-xl font-bold text-gray-800">Keuangan</h2>
           </div>
-          <p className="text-sm text-gray-600 mb-6">
-              Pantau keseluruhan keuangan Anda termasuk penjualan, pembayaran, dan lainnya.
-          </p>
           
-          {/* Navigasi Sub-menu */}
-          <nav className="space-y-2">
+          <nav>
                <button onClick={() => setActiveSubTab('summary')} className={getButtonClass('summary')}>
-                   Ringkasan keuangan
-                   <span className="text-gray-400 text-lg">&rsaquo;</span>
+                   Ringkasan Keuangan
                </button>
                <button onClick={() => setActiveSubTab('payment')} className={getButtonClass('payment')}>
-                   Ringkasan pembayaran
-                   <span className="text-gray-400 text-lg">&rsaquo;</span>
+                   Ringkasan Pembayaran
                </button>
                <button onClick={() => setActiveSubTab('log')} className={getButtonClass('log')}>
-                   Log pembayaran
-                   <span className="text-gray-400 text-lg">&rsaquo;</span>
+                   Log Pembayaran
                </button>
           </nav>
         </div>
       </aside>
       
-      {/* Area Konten Utama (Kanan) */}
-      <main className="flex-1 w-full lg:w-3/4 xl:w-4/5">
-          {renderSubContent()}
+      {/* Content */}
+      <main className="flex-1 min-w-0">
+          {activeSubTab === 'summary' && <FinancialSummary packages={packages} studios={studios} />}
+          {activeSubTab === 'payment' && <PaymentSummary />}
+          {activeSubTab === 'log' && <PaymentLog />}
       </main>
     </div>
   );
 };
 
-export default FinancialReport; // Ekspor komponen kontainer baru
+export default FinancialReport;

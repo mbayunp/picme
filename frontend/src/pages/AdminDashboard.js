@@ -1,20 +1,25 @@
+// src/pages/AdminDashboard.js
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import useAdminData from '../hooks/useAdminData';
 import AdminLayout from '../components/AdminLayout';
+
+// --- Komponen Dashboard ---
 import PostsManager from '../components/dashboard/PostsManager';
 import PackagesManager from '../components/dashboard/PackagesManager';
-import BookingsCalendar from '../components/dashboard/BookingsCalendar';
-import BookingsData from '../components/dashboard/BookingsData';
 import CustomersData from '../components/dashboard/CustomersData';
-import PortfolioManager from '../components/dashboard/PortfolioManager';
 import CustomerDetail from '../components/dashboard/CustomerDetail';
+import PortfolioManager from '../components/dashboard/PortfolioManager';
 import FinancialReport from '../components/dashboard/FinancialReport';
 import ContactMessages from '../components/dashboard/ContactMessages';
 import AnnouncementManager from '../components/dashboard/AnnouncementManager';
 import Beranda from '../components/dashboard/Beranda';
 import BookingDetailModal from '../components/dashboard/BookingDetailModal';
 
+// ✅ IMPORT BARU: Pengelola Booking (Gabungan Kalender & Data)
+import BookingsManager from '../components/dashboard/BookingsManager'; 
+
+// --- Komponen Modal Konfirmasi Sederhana ---
 const Modal = ({ title, message, onConfirm, onCancel }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
     <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
@@ -41,31 +46,33 @@ const Modal = ({ title, message, onConfirm, onCancel }) => (
 );
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('beranda');
   const [selectedStudio, setSelectedStudio] = useState('1');
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-
   const {
     posts, bookings, packages, studios, modalInfo, sortKey, sortDirection,
-    sortedBookings, sortedCustomers, handleDelete, showModal, closeModal,
-    fetchPosts, fetchBookings, fetchAllBookings, fetchPackages, fetchCustomers,
+    sortedBookings, handleDelete, showModal, closeModal,
+    fetchPosts, fetchAllBookings, fetchPackages, fetchCustomers,
     handleSort, renderSortArrow, formatShortDate, getPackageName, portfolioItems,
-    fetchPortfolioItems, customerDetail, fetchCustomerDetail, handleConfirmBooking,
+    fetchPortfolioItems, handleConfirmBooking,
     handleCancelBooking, contactMessages, fetchContactMessages, customersData,
     currentPage, totalPages, totalItems, setPage, bookingData, bookingCurrentPage,
     bookingTotalPages, setBookingPage, duplicateRecords, fetchDuplicateRecords,
     mergeCustomer,
     dashboardData,
     fetchDashboardData,
-  } = useAdminData(activeTab, selectedStudio, selectedCustomer);
+    selectedCustomer, 
+    setSelectedCustomer, 
+    fetchCustomerDetail
+  } = useAdminData(activeTab, selectedStudio, null);
 
+  // ✅ PENTING: Memastikan packages  di awal agar gambar di modal selalu muncul
   useEffect(() => {
     if (fetchPackages) {
       fetchPackages();
     }
-  }, [fetchPackages]); // Dependensi ini akan menjalankannya sekali saat hook siap
+  }, [fetchPackages]);
 
+  // State untuk modal detail booking (jika dipanggil dari Beranda/Dashboard global)
   const [isBookingDetailModalOpen, setIsBookingDetailModalOpen] = useState(false);
   const [selectedBookingEvent, setSelectedBookingEvent] = useState(null);
 
@@ -79,17 +86,9 @@ const AdminDashboard = () => {
     setSelectedBookingEvent(null);
   };
 
+  // Fungsi render konten utama berdasarkan tab yang aktif
   const renderContent = () => {
     switch (activeTab) {
-      case 'posts':
-        return (
-          <PostsManager
-            posts={posts}
-            fetchPosts={fetchPosts}
-            showModal={showModal}
-            handleDelete={handleDelete}
-          />
-        );
       case 'beranda':
         return (
           <Beranda
@@ -99,6 +98,42 @@ const AdminDashboard = () => {
             dashboardData={dashboardData}
           />
         );
+
+      // ✅ BAGIAN 1: Menggunakan BookingsManager (Gabungan)
+      case 'bookings':
+        return (
+          <BookingsManager
+            // Props untuk Kalender
+            bookings={bookings}
+            studios={studios}
+            selectedStudio={selectedStudio}
+            setSelectedStudio={setSelectedStudio}
+            
+            // Props untuk Data Tabel
+            sortedBookings={sortedBookings}
+            sortKey={sortKey}
+            sortDirection={sortDirection}
+            handleSort={handleSort}
+            renderSortArrow={renderSortArrow}
+            formatShortDate={formatShortDate}
+            getPackageName={getPackageName}
+            fetchAllBookings={fetchAllBookings}
+            bookingData={bookingData}
+            currentPage={bookingCurrentPage}
+            totalPages={bookingTotalPages}
+            setPage={setBookingPage}
+
+            // Props Umum (Shared)
+            packages={packages} // Penting untuk gambar paket
+            showModal={showModal}
+            handleDelete={handleDelete}
+            handleConfirmBooking={handleConfirmBooking}
+            handleCancelBooking={handleCancelBooking}
+          />
+        );
+      
+      // Case 'bookings-data' DIHAPUS karena sudah digabung ke 'bookings'
+
       case 'packages':
         return (
           <PackagesManager
@@ -108,44 +143,31 @@ const AdminDashboard = () => {
             handleDelete={handleDelete}
           />
         );
-      case 'bookings':
+
+      case 'posts':
         return (
-          <BookingsCalendar
-            bookings={bookings}
-            studios={studios}
-            selectedStudio={selectedStudio}
-            setSelectedStudio={setSelectedStudio}
-            packages={packages}
+          <PostsManager
+            posts={posts}
+            fetchPosts={fetchPosts}
             showModal={showModal}
             handleDelete={handleDelete}
-            handleConfirmBooking={handleConfirmBooking}
-            handleCancelBooking={handleCancelBooking}
           />
         );
-      case 'bookings-data':
-        return (
-          <BookingsData
-            sortedBookings={sortedBookings}
-            packages={packages}
-            studios={studios}
-            sortKey={sortKey}
-            sortDirection={sortDirection}
-            handleSort={handleSort}
-            renderSortArrow={renderSortArrow}
-            formatShortDate={formatShortDate}
-            getPackageName={getPackageName}
-            showModal={showModal}
-            fetchAllBookings={fetchAllBookings}
-            handleDelete={handleDelete}
-            handleConfirmBooking={handleConfirmBooking}
-            handleCancelBooking={handleCancelBooking}
-            bookingData={bookingData}
-            currentPage={bookingCurrentPage}
-            totalPages={bookingTotalPages}
-            setPage={setBookingPage}
-          />
-        );
+
+      // ✅ BAGIAN 2: Logika Detail Pelanggan
       case 'customers':
+        // Jika ada customer yang dipilih, tampilkan detailnya
+        if (selectedCustomer) {
+            return (
+                <CustomerDetail 
+                    customer={selectedCustomer}
+                    onBack={() => setSelectedCustomer(null)}
+                    fetchCustomerDetail={fetchCustomerDetail}
+                    onOpenBookingDetail={handleOpenBookingDetailModal}
+                />
+            );
+        }
+        // Jika tidak, tampilkan tabel daftar pelanggan
         return (
           <CustomersData
             customersData={customersData}
@@ -155,7 +177,7 @@ const AdminDashboard = () => {
             renderSortArrow={renderSortArrow}
             showModal={showModal}
             fetchCustomers={fetchCustomers}
-            onSelectCustomer={setSelectedCustomer}
+            onSelectCustomer={setSelectedCustomer} // ✅ Fungsi ini akan men-trigger perpindahan ke Detail
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={totalItems}
@@ -165,8 +187,10 @@ const AdminDashboard = () => {
             mergeCustomer={mergeCustomer}
           />
         );
+
       case 'announcements':
         return <AnnouncementManager showModal={showModal} />;
+
       case 'portfolio':
         return (
           <PortfolioManager
@@ -176,8 +200,10 @@ const AdminDashboard = () => {
             handleDelete={handleDelete}
           />
         );
+
       case 'financial-report':
         return <FinancialReport packages={packages} studios={studios} />;
+
       case 'contact-messages':
         return (
           <ContactMessages
@@ -186,6 +212,7 @@ const AdminDashboard = () => {
             showModal={showModal}
           />
         );
+
       default:
         return null;
     }
@@ -195,6 +222,7 @@ const AdminDashboard = () => {
     <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
       {renderContent()}
 
+      {/* Modal Konfirmasi Global */}
       {modalInfo.show && (
         <Modal
           title={modalInfo.title}
@@ -207,6 +235,7 @@ const AdminDashboard = () => {
         />
       )}
 
+      {/* Modal Detail Booking (Global/Beranda) */}
       {isBookingDetailModalOpen && selectedBookingEvent && (
         <BookingDetailModal
           selectedEvent={selectedBookingEvent}
@@ -215,7 +244,7 @@ const AdminDashboard = () => {
           handleCancelBooking={handleCancelBooking}
           handleDelete={handleDelete}
           showModal={showModal}
-          packages={packages}
+          packages={packages} // Pastikan packages diteruskan ke sini juga
         />
       )}
     </AdminLayout>
