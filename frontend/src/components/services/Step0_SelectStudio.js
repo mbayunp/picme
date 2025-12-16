@@ -68,13 +68,6 @@ const Step0_SelectStudio = ({ studios, selectedStudio, onSelectStudio, onContinu
                                     <FaClock className={`${isSelected ? 'text-green-600' : 'text-gray-400'}`} />
                                     <span>08:00 - 18:00 WIB</span>
                                 </div>
-                                
-                                <div className="flex items-start gap-2 text-sm text-gray-500 leading-relaxed">
-                                    <FaMapMarkerAlt className={`mt-1 flex-shrink-0 ${isSelected ? 'text-green-600' : 'text-gray-400'}`} />
-                                    <p className="line-clamp-2">
-                                        {studio.address || "Alamat studio lengkap akan ditampilkan di sini."}
-                                    </p>
-                                </div>
                             </div>
                         </div>
                     );

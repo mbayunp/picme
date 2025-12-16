@@ -63,10 +63,10 @@ function ServicesPage() {
     const [, setSuccessMessage] = useState("");
 
     const studios = [
-        { id: 1, name: "Picme Photo Studio 1", address: "Cluster Pramuka Blok C.4, Cianjur" },
-        { id: 2, name: "Picme Photo Studio 2", address: "Cluster Pramuka Blok C.4, Cianjur" },
-        { id: 3, name: "Picme Photo Studio 3", address: "Cluster Pramuka Blok C.4, Cianjur" },
-        { id: 4, name: "Picme Photo Studio 4", address: "Cluster Pramuka Blok C.4, Cianjur" },
+        { id: 1, name: "Picme Photo Studio 1" },
+        { id: 2, name: "Picme Photo Studio 2" },
+        { id: 3, name: "Picme Photo Studio 3" },
+        { id: 4, name: "Picme Photo Studio 4" },
     ];
 
     const getDayName = (date) => {

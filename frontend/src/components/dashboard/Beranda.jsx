@@ -16,6 +16,18 @@ moment.locale('id');
 
 const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
+// --- UTILITAS BARU UNTUK DETEKSI STUDIO DARI BOOKING ---
+// Mengasumsikan studio_id adalah string '1', '2', '3', '4'
+const getStudioIdFromBooking = (booking) => {
+    // Perhatikan: ini bergantung pada string 'studio X' di studio_name Anda
+    const sName = (booking.studio_name || '').toLowerCase();
+    if (sName.includes('studio 1')) return '1';
+    if (sName.includes('studio 2')) return '2';
+    if (sName.includes('studio 3')) return '3';
+    if (sName.includes('studio 4')) return '4';
+    return null; // Mengembalikan null jika tidak ada studio yang terdeteksi
+};
+
 // --- KOMPONEN KARTU ---
 const StatCard = ({ title, value, icon, color, subtext }) => (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow">
@@ -30,8 +42,7 @@ const StatCard = ({ title, value, icon, color, subtext }) => (
     </div>
 );
 
-// --- CHART SECTIONS (Sales, Status, Recent) ---
-// (Bagian chart tidak berubah signifikan, logika datanya ikut 'safeBookings')
+// --- CHART SECTIONS ---
 
 const SalesChart = ({ bookings }) => {
     const chartData = useMemo(() => {
@@ -40,6 +51,7 @@ const SalesChart = ({ bookings }) => {
             const date = moment().subtract(i, 'days').format('YYYY-MM-DD');
             dataByDate[date] = 0;
         }
+        // Sekarang menggunakan 'bookings' yang sudah difilter
         bookings.forEach(booking => {
             if (booking.status === 'confirmed' || booking.status === 'finished') {
                 const date = moment(booking.tanggal).format('YYYY-MM-DD');
@@ -67,7 +79,6 @@ const SalesChart = ({ bookings }) => {
         };
     }, [bookings]);
     
-    // Options disederhanakan
     const options = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true } } };
 
     return (
@@ -81,6 +92,7 @@ const SalesChart = ({ bookings }) => {
 const StatusDistributionChart = ({ bookings }) => {
     const data = useMemo(() => {
         const counts = { confirmed: 0, pending: 0, canceled: 0 };
+        // Sekarang menggunakan 'bookings' yang sudah difilter
         bookings.forEach(b => {
             const statusKey = b.status === 'finished' ? 'confirmed' : b.status;
             if (counts[statusKey] !== undefined) counts[statusKey]++;
@@ -99,7 +111,7 @@ const StatusDistributionChart = ({ bookings }) => {
             <div className="flex-grow relative flex justify-center items-center">
                  <div className="w-48 h-48"><Doughnut data={data} options={options} /></div>
                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
-                     <span className="text-2xl font-bold text-gray-700">{bookings.length}</span>
+                      <span className="text-2xl font-bold text-gray-700">{bookings.length}</span>
                  </div>
             </div>
         </div>
@@ -107,6 +119,7 @@ const StatusDistributionChart = ({ bookings }) => {
 };
 
 const RecentActivity = ({ bookings }) => {
+    // Sekarang menggunakan 'bookings' yang sudah difilter
     const recentBookings = useMemo(() => {
         if (!Array.isArray(bookings)) return [];
         return [...bookings].sort((a, b) => moment(b.created_at || b.tanggal).diff(moment(a.created_at || a.tanggal))).slice(0, 5);
@@ -125,7 +138,8 @@ const RecentActivity = ({ bookings }) => {
                                 <div className="text-xs text-gray-500 flex flex-wrap items-center gap-1 mt-0.5">
                                     <span className="flex items-center gap-1 bg-gray-100 px-1.5 py-0.5 rounded text-gray-600"><FaMapMarkerAlt size={10} /> {booking.studio_name || '?'}</span>
                                     <span>• {booking.package_name}</span>
-                                    <span>• {moment(booking.tanggal).format('DD MMM HH:mm')}</span>
+                                    <span>• {moment(booking.tanggal).format('DD MMM')}</span>
+                                    <span>• {booking.waktu_mulai} - {booking.waktu_selesai}</span>
                                 </div>
                             </div>
                         </div>
@@ -141,7 +155,7 @@ const RecentActivity = ({ bookings }) => {
 };
 
 // ====================================================================
-// MAIN COMPONENT: BERANDA (DENGAN LOGIKA MANUAL)
+// MAIN COMPONENT: BERANDA (LOGIKA FILTER STUDIO DIPERBAIKI)
 // ====================================================================
 const Beranda = ({ bookings, studios, onStudioChange }) => { 
     const [studioFilter, setStudioFilter] = useState(''); 
@@ -152,18 +166,38 @@ const Beranda = ({ bookings, studios, onStudioChange }) => {
 
     const safeBookings = useMemo(() => Array.isArray(bookings) ? bookings : [], [bookings]);
 
-    // ✅ LOGIKA UTAMA: PERHITUNGAN MANUAL PER STUDIO
+    // 🌟 PERBAIKAN UTAMA: Filter booking yang valid (memiliki studio)
+    const filteredBookings = useMemo(() => {
+        if (!safeBookings.length) return [];
+
+        return safeBookings.filter(b => {
+            const detectedStudioId = getStudioIdFromBooking(b);
+            
+            if (studioFilter === '') {
+                // Saat 'Semua Studio' dipilih, HANYA masukkan booking yang studionya terdeteksi
+                return detectedStudioId !== null;
+            } else {
+                // Saat studio spesifik dipilih, hanya masukkan booking dengan studio yang cocok
+                return detectedStudioId === studioFilter;
+            }
+        });
+    }, [safeBookings, studioFilter]);
+
+
+    // ✅ LOGIKA RINGKASAN: Sekarang menggunakan filteredBookings
     const summary = useMemo(() => {
         const today = moment().endOf('day');
         const sevenDaysAgo = moment().subtract(6, 'days').startOf('day');
 
-        // Inisialisasi Variabel Manual
-        let revenueS1 = 0, revenueS2 = 0, revenueS3 = 0, revenueS4 = 0;
-        let bookingCountS1 = 0, bookingCountS2 = 0, bookingCountS3 = 0, bookingCountS4 = 0;
+        let totalRevenue = 0;
+        let totalBookings = 0;
         let uniqueCustomersSet = new Set();
+        
+        // Variabel ini diperlukan untuk menghitung okupansi saat 'Semua Studio'
+        let revenueS1 = 0, revenueS2 = 0, revenueS3 = 0, revenueS4 = 0;
 
-        // Loop data satu per satu
-        safeBookings.forEach(b => {
+        // Loop data filteredBookings (sudah dijamin hanya memiliki studio yang relevan/terdeteksi)
+        filteredBookings.forEach(b => {
             const bDate = moment(b.tanggal);
             
             // 1. Cek Waktu (Harus dalam 7 hari terakhir)
@@ -175,21 +209,21 @@ const Beranda = ({ bookings, studios, onStudioChange }) => {
                 const isPaid = b.status === 'confirmed' || b.status === 'finished';
                 const isActive = b.status !== 'canceled';
 
-                // 2. Deteksi Studio (Berdasarkan Nama) & Akumulasi Manual
-                const sName = (b.studio_name || '').toLowerCase();
+                const detectedStudioId = getStudioIdFromBooking(b);
 
-                if (sName.includes('studio 1')) {
+                // Akumulasi total (final result)
+                if (isPaid) totalRevenue += total;
+                if (isActive) totalBookings++;
+
+                // Akumulasi per Studio (Hanya untuk keperluan statistik okupansi)
+                if (detectedStudioId === '1') {
                     if (isPaid) revenueS1 += total;
-                    if (isActive) bookingCountS1++;
-                } else if (sName.includes('studio 2')) {
+                } else if (detectedStudioId === '2') {
                     if (isPaid) revenueS2 += total;
-                    if (isActive) bookingCountS2++;
-                } else if (sName.includes('studio 3')) {
+                } else if (detectedStudioId === '3') {
                     if (isPaid) revenueS3 += total;
-                    if (isActive) bookingCountS3++;
-                } else if (sName.includes('studio 4')) {
+                } else if (detectedStudioId === '4') {
                     if (isPaid) revenueS4 += total;
-                    if (isActive) bookingCountS4++;
                 }
 
                 // Masukkan pelanggan ke set (jika status confirmed/finished/pending)
@@ -197,41 +231,26 @@ const Beranda = ({ bookings, studios, onStudioChange }) => {
             }
         });
 
-        // 3. Tentukan Hasil Akhir Berdasarkan Filter
-        let finalRevenue = 0;
-        let finalBookings = 0;
+        // Tentukan jumlah studio aktif untuk perhitungan Okupansi
+        const activeStudiosCount = studioFilter ? 1 : 
+                                   (revenueS1 > 0 ? 1 : 0) + 
+                                   (revenueS2 > 0 ? 1 : 0) + 
+                                   (revenueS3 > 0 ? 1 : 0) + 
+                                   (revenueS4 > 0 ? 1 : 0);
         
-        if (studioFilter === '1') {
-            finalRevenue = revenueS1;
-            finalBookings = bookingCountS1;
-        } else if (studioFilter === '2') {
-            finalRevenue = revenueS2;
-            finalBookings = bookingCountS2;
-        } else if (studioFilter === '3') {
-            finalRevenue = revenueS3;
-            finalBookings = bookingCountS3;
-        } else if (studioFilter === '4') {
-            finalRevenue = revenueS4;
-            finalBookings = bookingCountS4;
-        } else {
-            // JIKA SEMUA STUDIO: JUMLAHKAN MANUAL S1+S2+S3+S4
-            finalRevenue = revenueS1 + revenueS2 + revenueS3 + revenueS4;
-            finalBookings = bookingCountS1 + bookingCountS2 + bookingCountS3 + bookingCountS4;
-        }
-
-        // Okupansi (Kapasitas 10 slot per hari * 7 hari = 70)
-        const activeStudiosCount = studioFilter ? 1 : 4;
-        const capacity = 70 * activeStudiosCount;
-        const occupancy = Math.round((finalBookings / capacity) * 100) || 0;
+        // Kapasitas default: 10 slot per hari * 7 hari = 70. 
+        // Okupansi dihitung berdasarkan studio yang benar-benar memiliki revenue dalam 7 hari (jika filter kosong)
+        const capacity = 70 * Math.max(1, activeStudiosCount); 
+        const occupancy = Math.round((totalBookings / capacity) * 100) || 0;
 
         return { 
-            totalRevenue: finalRevenue, 
-            totalBookings: finalBookings, 
-            uniqueCustomers: uniqueCustomersSet.size, // Pelanggan unik tetap global untuk 7 hari
+            totalRevenue: totalRevenue, 
+            totalBookings: totalBookings, 
+            uniqueCustomers: uniqueCustomersSet.size,
             occupancy 
         };
 
-    }, [safeBookings, studioFilter]); // Recalculate jika data / filter berubah
+    }, [filteredBookings, studioFilter]); // Recalculate jika data / filter berubah
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen flex flex-col gap-6">
@@ -241,7 +260,7 @@ const Beranda = ({ bookings, studios, onStudioChange }) => {
                     <p className="text-sm text-gray-500">
                         {studioFilter 
                             ? `Statistik untuk ${studios.find(s=>String(s.id)===String(studioFilter))?.name || 'Studio'}` 
-                            : 'Statistik Total (Penjumlahan Studio 1 + 2 + 3 + 4)' 
+                            : 'Statistik Total (Hanya pesanan yang memiliki studio)' // Deskripsi diperbarui
                         }
                     </p>
                 </div>
@@ -265,13 +284,15 @@ const Beranda = ({ bookings, studios, onStudioChange }) => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2"><SalesChart bookings={safeBookings} /></div>
-                <div><StatusDistributionChart bookings={safeBookings} /></div>
+                {/* Menggunakan filteredBookings */}
+                <div className="lg:col-span-2"><SalesChart bookings={filteredBookings} /></div>
+                <div><StatusDistributionChart bookings={filteredBookings} /></div>
             </div>
             
-            <RecentActivity bookings={safeBookings} />
+            {/* Menggunakan filteredBookings */}
+            <RecentActivity bookings={filteredBookings} />
         </div>
     );
 };
 
-export default Beranda; 
+export default Beranda;
